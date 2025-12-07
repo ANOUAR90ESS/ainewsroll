@@ -1,0 +1,54 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# Notes & guides
+*guide*
+*notes*
+SECURITY_NOTE.md
+SECURITY_INCIDENT_ACTION.md
+VERCEL_DEPLOYMENT.md
+
+# Node stuff (اختياري لكن مهم)
+node_modules/
+dist/
+.build/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.staging
+.env.production
+.env.example
+server/.env
+env.d.tsx
+env.example.tsx
+env*.tsx
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
