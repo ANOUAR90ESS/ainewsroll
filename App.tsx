@@ -189,6 +189,10 @@ const App: React.FC = () => {
           alert("Access Denied: Admins only.");
           return;
       }
+      if (view === AppView.ANALYTICS && user?.role !== 'admin') {
+        alert("Access Denied: Admins only.");
+        return;
+      }
       setCurrentView(view);
       if (pageId) setCurrentPageId(pageId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
