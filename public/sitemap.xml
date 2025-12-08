@@ -1,39 +1,95 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
   <url>
     <loc>https://ainewsroll.space/</loc>
     <lastmod>2025-12-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
   <url>
-    <loc>https://ainewsroll.space/?view=smart-chat</loc>
+    <loc>https://ainewsroll.space/tool-directory</loc>
     <lastmod>2025-12-09</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://ainewsroll.space/?view=latest-news</loc>
-    <lastmod>2025-12-09</lastmod>
-    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+
   <url>
-    <loc>https://ainewsroll.space/?view=pages&id=privacy</loc>
+    <loc>https://ainewsroll.space/smart-chat</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/latest-news</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/about-us</loc>
     <lastmod>2025-12-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
   </url>
+
   <url>
-    <loc>https://ainewsroll.space/?view=pages&id=terms</loc>
-    <lastmod>2025-12-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://ainewsroll.space/?view=pages&id=about</loc>
+    <loc>https://ainewsroll.space/careers</loc>
     <lastmod>2025-12-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <url>
+    <loc>https://ainewsroll.space/blog-news</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/contact</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/legal</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/privacy-policy</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/terms-of-service</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/cookie-settings</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://ainewsroll.space/security</loc>
+    <lastmod>2025-12-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
 </urlset>
