@@ -305,18 +305,6 @@ export const generateToolSlides = async (tool: Tool): Promise<Slide[]> => {
     return JSON.parse(response.text || "[]");
 }
 
-export const generatePodcastScript = async (tool: Tool): Promise<string> => {
-    const ai = getClient();
-    const prompt = `Write a very short, enthusiastic podcast intro script (approx 50 words) introducing the AI tool "${tool.name}". 
-    The host is excited about its features: ${tool.description}.`;
-    
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-    });
-    return response.text || "";
-}
-
 // --- Analytics ---
 
 export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {

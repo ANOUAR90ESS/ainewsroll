@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, Slide } from '../types';
-import { X, FileText, MonitorPlay, Mic, Play, Loader2 } from 'lucide-react';
-import { generateToolSlides, generatePodcastScript, generateSpeech } from '../services/geminiService';
+import { X, FileText, MonitorPlay, Loader2 } from 'lucide-react';
+import { generateToolSlides } from '../services/geminiService';
 
 interface ToolInsightModalProps {
   tool: Tool;
@@ -9,12 +9,11 @@ interface ToolInsightModalProps {
 }
 
 const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'slides' | 'podcast'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'slides'>('summary');
   const [slides, setSlides] = useState<Slide[]>([]);
   const [loading, setLoading] = useState(false);
-  const [podcastAudio, setPodcastAudio] = useState<HTMLAudioElement | null>(null);
 
-  const handleTabChange = async (tab: 'summary' | 'slides' | 'podcast') => {
+  const handleTabChange = async (tab: 'summary' | 'slides') => {
     setActiveTab(tab);
     if (tab === 'slides' && slides.length === 0) {
       setLoading(true);
@@ -26,27 +25,6 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
       } finally {
         setLoading(false);
       }
-    } else if (tab === 'podcast' && !podcastAudio) {
-      setLoading(true);
-      try {
-        const script = await generatePodcastScript(tool);
-        const speechRes = await generateSpeech(script, 'Puck'); // Use a different voice for podcast
-        const base64 = speechRes.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (base64) {
-            const audio = new Audio("data:audio/wav;base64," + base64);
-            setPodcastAudio(audio);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const playPodcast = () => {
-    if (podcastAudio) {
-        podcastAudio.play();
     }
   };
 
@@ -75,12 +53,6 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
             className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${activeTab === 'slides' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-zinc-500 hover:text-zinc-300'}`}
           >
             <MonitorPlay className="w-4 h-4" /> Slides
-          </button>
-          <button 
-            onClick={() => handleTabChange('podcast')}
-            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${activeTab === 'podcast' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-          >
-            <Mic className="w-4 h-4" /> Podcast
           </button>
         </div>
 
@@ -126,32 +98,6 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
                    ))}
                  </div>
                )}
-             </div>
-           )}
-
-           {activeTab === 'podcast' && (
-             <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl shadow-indigo-500/30">
-                  <Mic className="w-16 h-16 text-white" />
-                </div>
-                <div>
-                   <h3 className="text-xl font-bold text-white mb-2">Nexus AI Weekly</h3>
-                   <p className="text-zinc-400 text-sm">Episode: Deep Dive into {tool.name}</p>
-                </div>
-                
-                {loading ? (
-                   <div className="flex items-center gap-2 text-indigo-400">
-                     <Loader2 className="w-4 h-4 animate-spin" /> Preparing audio...
-                   </div>
-                ) : (
-                   <button 
-                     onClick={playPodcast}
-                     disabled={!podcastAudio}
-                     className="flex items-center gap-3 px-8 py-3 bg-white text-black hover:bg-zinc-200 rounded-full font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                   >
-                     <Play className="w-5 h-5 fill-current" /> Play Episode
-                   </button>
-                )}
              </div>
            )}
         </div>
