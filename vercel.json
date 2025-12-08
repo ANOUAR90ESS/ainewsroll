@@ -1,31 +1,19 @@
 {
+  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "server/server.ts": {
-      "runtime": "nodejs18.x",
-      "memory": 512
-    }
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/sitemap.xml",
-      "dest": "/server/server.ts"
+      "source": "/sitemap.xml",
+      "destination": "/api/seo?sitemap=1"
     },
     {
-      "src": "/robots.txt",
-      "dest": "/server/server.ts"
+      "source": "/robots.txt",
+      "destination": "/api/seo"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/server/server.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
   ]
 }
