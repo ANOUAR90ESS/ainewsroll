@@ -16,6 +16,5 @@ root.render(
       <App />
       <SpeedInsights />
     </ErrorBoundary>
-    </ErrorBoundary>
   </React.StrictMode>
 );

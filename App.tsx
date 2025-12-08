@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import Sidebar from './components/Sidebar';
 import ToolCard from './components/ToolCard';
 import Footer from './components/Footer';
@@ -12,6 +13,7 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const NewsFeed = lazy(() => import('./components/demos/NewsFeed'));
 const GenericPage = lazy(() => import('./components/GenericPage'));
 const PaymentPage = lazy(() => import('./components/PaymentPage'));
+const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/geminiService';
 import { 
@@ -65,15 +67,16 @@ const App: React.FC = () => {
   // Update page title based on current view
   useEffect(() => {
     const titleMap: Record<AppView, string> = {
-      [AppView.HOME]: 'AI Tool Directory | Ainewsroll',
-      [AppView.SMART_CHAT]: 'Smart Chat | Ainewsroll',
-      [AppView.LATEST_NEWS]: 'Latest News | Ainewsroll',
-      [AppView.ADMIN]: 'Admin Dashboard | Ainewsroll',
-      [AppView.PAGES]: 'Page | Ainewsroll',
-      [AppView.PAYMENT]: 'Payment | Ainewsroll',
+      [AppView.HOME]: 'AI Tool Directory | AI News-Roll',
+      [AppView.SMART_CHAT]: 'Smart Chat | AI News-Roll',
+      [AppView.LATEST_NEWS]: 'Latest News | AI News-Roll',
+      [AppView.ANALYTICS]: 'Analytics Dashboard | AI News-Roll',
+      [AppView.ADMIN]: 'Admin Dashboard | AI News-Roll',
+      [AppView.PAGES]: 'Page | AI News-Roll',
+      [AppView.PAYMENT]: 'Payment | AI News-Roll',
     };
     
-    document.title = titleMap[currentView] || 'Ainewsroll';
+    document.title = titleMap[currentView] || 'AI News-Roll';
   }, [currentView]);
 
   useEffect(() => {
@@ -536,11 +539,16 @@ const App: React.FC = () => {
                   <NewsFeed articles={news} />
                 </Suspense>
               )}
+              {currentView === AppView.ANALYTICS && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <AnalyticsDashboard />
+                </Suspense>
+              )}
               {currentView === AppView.PAYMENT && (
                 <Suspense fallback={<LoadingFallback />}>
                   <PaymentPage 
                       plan={selectedPlan} 
-                      onBack={() => setCurrentView(AppView.PRICING)}
+                      onBack={() => setCurrentView(AppView.HOME)}
                       onComplete={() => setCurrentView(AppView.HOME)} 
                   />
                 </Suspense>
@@ -572,6 +580,7 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+      <SpeedInsights />
     </div>
   );
 };

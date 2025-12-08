@@ -14,15 +14,17 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Brand Column */}
           <div className="space-y-4 col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                 <span className="font-bold text-white">N</span>
-              </div>
+              <img 
+                src="/android-chrome-512x512.png" 
+                alt="AI News-Roll Logo" 
+                className="w-10 h-10 rounded-lg"
+              />
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-                Nexus AI
+                AI News-Roll
               </span>
             </div>
             <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">
-              Your gateway to the next generation of AI tools. Powered by Gemini 2.5 Flash, Pro Vision, and Veo.
+              Your gateway to the next generation of AI tools. Powered by Gemini 2.5 Flash.
             </p>
           </div>
           
@@ -31,8 +33,8 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <h4 className="text-white font-bold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-zinc-400">
               <li><button onClick={() => onNavigate(AppView.HOME)} className="hover:text-indigo-400 transition-colors text-left">Tool Directory</button></li>
-              <li><button onClick={() => onNavigate(AppView.VEO_STUDIO)} className="hover:text-indigo-400 transition-colors text-left">Veo Video Studio</button></li>
-              <li><button onClick={() => onNavigate(AppView.LIVE_CHAT)} className="hover:text-indigo-400 transition-colors text-left">Live Conversation</button></li>
+              <li><button onClick={() => onNavigate(AppView.SMART_CHAT)} className="hover:text-indigo-400 transition-colors text-left">Smart Chat</button></li>
+              <li><button onClick={() => onNavigate(AppView.LATEST_NEWS)} className="hover:text-indigo-400 transition-colors text-left">Latest News</button></li>
               <li><button onClick={() => onNavigate(AppView.PAGES, 'api')} className="hover:text-indigo-400 transition-colors text-left">Developer API</button></li>
             </ul>
           </div>
@@ -63,13 +65,13 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Bottom Bar */}
         <div className="border-t border-zinc-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-zinc-500 text-sm flex items-center gap-1 text-center md:text-left">
-            © {new Date().getFullYear()} Nexus AI Hub. Made with <Heart className="w-3 h-3 text-red-500 fill-current" /> using Gemini.
+            © {new Date().getFullYear()} AI News-Roll. Made with <Heart className="w-3 h-3 text-red-500 fill-current" /> by the AI News-Roll Team.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Twitter className="w-4 h-4" /></a>
-            <a href="#" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Github className="w-4 h-4" /></a>
-            <a href="#" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Linkedin className="w-4 h-4" /></a>
-            <a href="#" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Mail className="w-4 h-4" /></a>
+            <a href="#" title="Follow us on Twitter" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Twitter className="w-4 h-4" /></a>
+            <a href="#" title="Visit our GitHub" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Github className="w-4 h-4" /></a>
+            <a href="#" title="Connect on LinkedIn" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Linkedin className="w-4 h-4" /></a>
+            <a href="#" title="Contact us via email" className="p-2 rounded-full bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all"><Mail className="w-4 h-4" /></a>
           </div>
         </div>
       </div>
