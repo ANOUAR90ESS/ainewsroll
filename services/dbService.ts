@@ -137,12 +137,22 @@ export const addNewsToDb = async (article: Partial<NewsArticle>) => {
   
   const dbData = mapNewsToDB(article);
   delete (dbData as any).id;
+  delete (dbData as any).created_at;
 
-  const { error } = await supabase.from('news').insert({
+  const payload = {
     ...dbData,
-    date: new Date().toISOString()
-  });
-  if (error) throw error;
+    date: dbData.date || new Date().toISOString()
+  };
+
+  console.log('Inserting news to DB:', payload);
+  const { data, error } = await supabase.from('news').insert(payload).select();
+  
+  if (error) {
+    console.error('Failed to insert news:', error);
+    throw error;
+  }
+  
+  console.log('News inserted successfully:', data);
 };
 
 export const updateNewsInDb = async (id: string, article: Partial<NewsArticle>) => {

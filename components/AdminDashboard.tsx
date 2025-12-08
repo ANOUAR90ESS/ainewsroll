@@ -189,7 +189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!newNews.title || !newNews.content) return;
 
     const article: NewsArticle = {
-      id: editingId || newNews.id || '',
+      id: editingId || newNews.id || crypto.randomUUID(),
       title: newNews.title || "Untitled",
       description: newNews.description || "",
       content: newNews.content || "",

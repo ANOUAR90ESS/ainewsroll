@@ -225,10 +225,16 @@ const App: React.FC = () => {
   };
 
   const handleAddNews = async (article: NewsArticle) => {
+    console.log('handleAddNews called with:', article);
+    console.log('isSupabaseConfigured:', isSupabaseConfigured);
+    
     try {
         if (isSupabaseConfigured) {
+            console.log('Attempting to save news to Supabase...');
             await addNewsToDb(article);
+            console.log('News saved to Supabase successfully');
         } else {
+            console.log('Supabase not configured, saving to local state');
             setNews((prev: NewsArticle[]) => [article, ...prev]);
         }
         setCurrentView(AppView.LATEST_NEWS);
