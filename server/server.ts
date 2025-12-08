@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction, RequestHandler } from 'expres
 import cors from 'cors';
 import { createClient, User } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -114,6 +116,38 @@ app.post('/api/books', requireAuth, (async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message || 'Server error' });
   }
 }) as RequestHandler);
+
+/**
+ * Sitemap Endpoint: Serve sitemap.xml with correct MIME type
+ */
+app.get('/sitemap.xml', (req: Request, res: Response) => {
+  try {
+    const sitemapPath = path.join(__dirname, '../public/sitemap.xml');
+    const sitemapContent = fs.readFileSync(sitemapPath, 'utf-8');
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    res.send(sitemapContent);
+  } catch (err: any) {
+    console.error('Sitemap error:', err);
+    res.status(404).json({ error: 'Sitemap not found' });
+  }
+});
+
+/**
+ * Robots.txt Endpoint: Serve robots.txt with correct MIME type
+ */
+app.get('/robots.txt', (req: Request, res: Response) => {
+  try {
+    const robotsPath = path.join(__dirname, '../public/robots.txt');
+    const robotsContent = fs.readFileSync(robotsPath, 'utf-8');
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    res.send(robotsContent);
+  } catch (err: any) {
+    console.error('Robots.txt error:', err);
+    res.status(404).json({ error: 'Robots.txt not found' });
+  }
+});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
