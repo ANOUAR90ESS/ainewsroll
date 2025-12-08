@@ -37,6 +37,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                   <img 
                     src={article.imageUrl} 
                     alt={article.title}
+                    loading="lazy"
+                    width="1280"
+                    height="720"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100" 
                   />
                   <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10 z-10">
@@ -94,6 +97,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                       <img 
                         src={article.imageUrl} 
                         alt={article.title}
+                        loading="lazy"
+                        width="1280"
+                        height="720"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100" 
                       />
                       <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10 z-10">

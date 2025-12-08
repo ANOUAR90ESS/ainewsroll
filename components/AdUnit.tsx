@@ -44,15 +44,23 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
     return () => clearTimeout(timer);
   }, [adSlot]);
 
-  // If we have an ad slot, render real AdSense unit
+  const getReservedHeight = () => {
+    if (format === 'vertical') return 600;
+    if (format === 'rectangle') return 300;
+    return 280; // horizontal / default
+  };
+
+  const reservedHeight = getReservedHeight();
+
+  // If we have an ad slot, render real AdSense unit with reserved height to avoid CLS
   if (adSlot) {
     return (
-      <div className={`w-full min-w-[300px] max-w-[1000px] mx-auto my-6 ${className}`}>
+      <div className={`w-full min-w-[300px] max-w-[1000px] mx-auto my-6 ${className}`} style={{ minHeight: reservedHeight + 40 }}>
         <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1 w-full text-center">Advertisement</div>
         {/* @ts-ignore */}
         <ins
           className="adsbygoogle"
-          style={{ display: 'block', width: '100%', minWidth: '300px' }}
+          style={{ display: 'block', width: '100%', minWidth: '300px', minHeight: reservedHeight, height: reservedHeight }}
           data-ad-client="ca-pub-9054863881104831"
           data-ad-slot={String(adSlot)}
           data-ad-format="auto"

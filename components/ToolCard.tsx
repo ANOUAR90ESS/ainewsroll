@@ -17,6 +17,8 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
           <img 
             src={tool.imageUrl} 
             alt={tool.name} 
+            width="1280"
+            height="720"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100"
             loading="lazy"
           />

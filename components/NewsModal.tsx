@@ -33,6 +33,8 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
           <img 
             src={article.imageUrl} 
             alt={article.title} 
+            width="1600"
+            height="900"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
