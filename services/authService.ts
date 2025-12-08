@@ -3,21 +3,39 @@ import { UserProfile } from '../types';
 
 export const signIn = async (email: string, password: string) => {
   if (!supabase) throw new Error("Supabase not configured");
+  
+  console.log('Attempting sign in for:', email);
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
-  if (error) throw error;
+  
+  if (error) {
+    console.error('Sign in error:', error);
+    throw error;
+  }
+  
+  console.log('Sign in successful:', data.user?.email);
   return data;
 };
 
 export const signUp = async (email: string, password: string) => {
   if (!supabase) throw new Error("Supabase not configured");
+  
+  console.log('Attempting sign up for:', email);
+  
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
   });
-  if (error) throw error;
+  
+  if (error) {
+    console.error('Sign up error:', error);
+    throw error;
+  }
+  
+  console.log('Sign up successful:', data.user?.email);
   return data;
 };
 
