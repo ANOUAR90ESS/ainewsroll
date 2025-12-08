@@ -267,56 +267,89 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const fetchRSS = async () => {
+    const fetchRSS = async () => {
     setFetchingRss(true);
     setRssError('');
     setRssItems([]);
-    
+
+    const mockXML = `
+      <rss>
+       <channel>
+        <item>
+           <title>New AI Assistant 'Cerebra' Launches Beta</title>
+           <description>Cerebra is a new personal AI assistant that organizes your entire digital life. It connects with your calendar, email, and slack to provide actionable summaries.</description>
+        </item>
+        <item>
+           <title>PixelPerfect: The Ultimate Image Upscaler</title>
+           <description>A revolutionary new tool for photographers. Upscale images to 8K without losing quality using advanced GANs.</description>
+        </item>
+        <item>
+           <title>CodeWiz 2.0 Released</title>
+           <description>The popular coding assistant just got better. Now supports Rust and Go with real-time debugging suggestions.</description>
+        </item>
+       </channel>
+      </rss>
+    `;
+
     try {
-        const mockXML = `
-          <rss>
-             <channel>
-                <item>
-                   <title>New AI Assistant 'Cerebra' Launches Beta</title>
-                   <description>Cerebra is a new personal AI assistant that organizes your entire digital life. It connects with your calendar, email, and slack to provide actionable summaries.</description>
-                </item>
-                <item>
-                   <title>PixelPerfect: The Ultimate Image Upscaler</title>
-                   <description>A revolutionary new tool for photographers. Upscale images to 8K without losing quality using advanced GANs.</description>
-                </item>
-                <item>
-                   <title>CodeWiz 2.0 Released</title>
-                   <description>The popular coding assistant just got better. Now supports Rust and Go with real-time debugging suggestions.</description>
-                </item>
-             </channel>
-          </rss>
-        `;
+      let items: any[] = [];
 
-        let xmlText = mockXML;
-        try {
-             const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
-             const data = await res.json();
-             if (data.contents) xmlText = data.contents;
-        } catch (e) {
-            console.warn("CORS fetch failed, using mock data for demo.");
+      // 1) Try rss2json (tolerant, no CORS issues)
+      try {
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
+        const data = await res.json();
+        if (data?.items?.length) {
+          items = data.items.slice(0, 10).map((item: any, i: number) => ({
+            id: `rss-json-${i}`,
+            title: item.title || '',
+            description: item.description || item.content || '',
+            link: item.link || '#'
+          }));
         }
+      } catch (e) {
+        console.warn('rss2json fetch failed, will try allorigins xml.', e);
+      }
 
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-        const items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 5).map((item, i) => ({
+      // 2) Fallback to allorigins XML
+      if (!items.length) {
+        try {
+           const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
+           const data = await res.json();
+           const xmlText = data.contents || mockXML;
+           const parser = new DOMParser();
+           const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+           items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 10).map((item, i) => ({
              id: `rss-${i}`,
              title: item.querySelector("title")?.textContent || "",
-             description: item.querySelector("description")?.textContent || ""
+             description: item.querySelector("description")?.textContent || "",
+             link: item.querySelector('link')?.textContent || '#'
+           }));
+        } catch (e) {
+          console.warn("allorigins fetch failed, using mock data.", e);
+        }
+      }
+
+      // 3) Final fallback: mock data
+      if (!items.length) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(mockXML, "text/xml");
+        items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 5).map((item, i) => ({
+           id: `rss-mock-${i}`,
+           title: item.querySelector("title")?.textContent || "",
+           description: item.querySelector("description")?.textContent || "",
+           link: '#'
         }));
+      }
         
-        setRssItems(items);
+      setRssItems(items);
 
     } catch (e: any) {
-        setRssError("Failed to fetch feed. ensure URL is valid.");
+      console.error(e);
+      setRssError("Failed to fetch feed. ensure URL is valid.");
     } finally {
-        setFetchingRss(false);
+      setFetchingRss(false);
     }
-  };
+    };
 
   const convertRssToTool = async (item: any) => {
     setProcessingId(item.id);
@@ -328,7 +361,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             category: extracted.category || 'News',
             price: extracted.price || 'Unknown',
             tags: extracted.tags || ['RSS'],
-            website: '#',
+        website: item.link || '#',
             imageUrl: `https://picsum.photos/seed/${extracted.name?.replace(/\s/g,'')}/400/250`
         });
         setActiveTab('create');
@@ -349,7 +382,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             title: extracted.title || item.title,
             description: extracted.description || item.description,
             content: extracted.content || item.description, 
-            source: 'RSS Feed',
+        source: item.link || 'RSS Feed',
             imageUrl: `https://picsum.photos/seed/${(extracted.title || item.title).replace(/\s/g,'')}/800/400`,
             category: 'Tech News'
         });
