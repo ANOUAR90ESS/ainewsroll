@@ -310,20 +310,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         console.warn('rss2json fetch failed, will try allorigins xml.', e);
       }
 
-      // 2) Fallback to allorigins XML
+        // 2) Fallback to allorigins (XML or CSV)
       if (!items.length) {
         try {
-           const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
-           const data = await res.json();
-           const xmlText = data.contents || mockXML;
-           const parser = new DOMParser();
-           const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-           items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 10).map((item, i) => ({
-             id: `rss-${i}`,
-             title: item.querySelector("title")?.textContent || "",
-             description: item.querySelector("description")?.textContent || "",
-             link: item.querySelector('link')?.textContent || '#'
-           }));
+                 const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
+                 const data = await res.json();
+                 const payload = data.contents || '';
+
+                 // Try XML parse first
+                 if (payload.includes('<rss') || payload.includes('<feed')) {
+                   const parser = new DOMParser();
+                   const xmlDoc = parser.parseFromString(payload, "text/xml");
+                   items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 15).map((item, i) => ({
+                       id: `rss-${i}`,
+                       title: item.querySelector("title")?.textContent || "",
+                       description: item.querySelector("description")?.textContent || "",
+                       link: item.querySelector('link')?.textContent || '#'
+                   }));
+                 }
+
+                 // If not XML, try CSV (some rss.app endpoints return CSV)
+                 if (!items.length && payload.includes(',')) {
+                    const lines = payload.split(/\r?\n/).filter(Boolean);
+                    if (lines.length > 1) {
+                      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                      const titleIdx = headers.findIndex(h => h.includes('title'));
+                      const descIdx = headers.findIndex(h => h.includes('description') || h.includes('content'));
+                      const linkIdx = headers.findIndex(h => h === 'link' || h === 'url');
+                      lines.slice(1).forEach((line, i) => {
+                        const cols = line.split(',');
+                        const title = titleIdx >= 0 ? cols[titleIdx] : '';
+                        const description = descIdx >= 0 ? cols[descIdx] : '';
+                        const link = linkIdx >= 0 ? cols[linkIdx] : '#';
+                        if (title || description) {
+                          items.push({
+                            id: `rss-csv-${i}`,
+                            title,
+                            description,
+                            link
+                          });
+                        }
+                      });
+                      items = items.slice(0, 15);
+                    }
+                 }
         } catch (e) {
           console.warn("allorigins fetch failed, using mock data.", e);
         }
