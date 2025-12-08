@@ -8,6 +8,13 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-81P94TP3VF');
+      
+      // Suppress AdSense aria-hidden warnings (cosmetic only, ads work fine)
+      const originalError = console.error;
+      console.error = (...args) => {
+        if (args[0]?.includes?.('aria-hidden')) return;
+        originalError.apply(console, args);
+      };
     </script>
     
     <meta charset="UTF-8" />
