@@ -24,11 +24,6 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
   const adSlot = slot || (adLayout !== 'auto' ? envSlots[adLayout] : undefined) || envSlots.default;
   const adRef = useRef<HTMLDivElement | null>(null);
   const [loaded, setLoaded] = useState(false);
-  
-  let sizeClasses = '';
-  if (format === 'horizontal') sizeClasses = 'w-full h-[90px] max-w-[728px]'; // Leaderboard
-  if (format === 'rectangle') sizeClasses = 'w-[300px] h-[250px]'; // Medium Rectangle
-  if (format === 'vertical') sizeClasses = 'w-[160px] h-[600px]'; // Skyscraper
 
   useEffect(() => {
     if (!adSlot) return; // No slot -> keep placeholder
@@ -52,14 +47,15 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
   // If we have an ad slot, render real AdSense unit
   if (adSlot) {
     return (
-      <div className={`flex flex-col items-center justify-center my-6 ${className}`}>
+      <div className={`w-full min-w-[300px] max-w-[1000px] mx-auto my-6 ${className}`}>
         <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1 w-full text-center">Advertisement</div>
         {/* @ts-ignore */}
         <ins
-          className="adsbygoogle block"
+          className="adsbygoogle"
+          style={{ display: 'block', width: '100%', minWidth: '300px' }}
           data-ad-client="ca-pub-9054863881104831"
           data-ad-slot={String(adSlot)}
-          data-ad-format="autorelaxed"
+          data-ad-format="auto"
           data-full-width-responsive="true"
           ref={adRef as any}
         />
@@ -69,10 +65,10 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
 
   // Fallback placeholder if no slot configured
   return (
-    <div className={`flex flex-col items-center justify-center my-6 ${className}`}>
+    <div className={`w-full min-w-[300px] max-w-[1000px] mx-auto my-6 ${className}`}>
       <div className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1 w-full text-center">Advertisement</div>
       <div 
-        className={`${sizeClasses} bg-zinc-900 border border-zinc-800 border-dashed rounded-lg flex flex-col items-center justify-center relative overflow-hidden group`}
+        className={`w-full min-h-[250px] bg-zinc-900 border border-zinc-800 border-dashed rounded-lg flex flex-col items-center justify-center relative overflow-hidden group`}
         title="AdSense Placeholder"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/20 to-zinc-900/20 z-0"></div>
@@ -88,7 +84,7 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
         </div>
       </div>
       {!loaded && (
-        <div className="text-[10px] text-zinc-500 mt-2">
+        <div className="text-[10px] text-zinc-500 mt-2 text-center">
           Provide slot via prop or set env: VITE_ADSENSE_SLOT / VITE_ADSENSE_SLOT_RSPV / VITE_ADSENSE_SLOT_MCRSPV
         </div>
       )}
