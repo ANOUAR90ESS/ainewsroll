@@ -39,16 +39,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className={sidebarClasses}>
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-zinc-800 flex items-center gap-3">
-             <picture>
-               <source srcSet="/logo.webp" type="image/webp" />
-               <img 
-                 src="/android-chrome-512x512.png" 
-                 alt="AI News-Roll Logo" 
-                 width="40"
-                 height="40"
-                 className="w-10 h-10 rounded-lg"
-               />
-             </picture>
+             <img 
+               src="/logo.webp" 
+               alt="AI News-Roll Logo" 
+               width="40"
+               height="40"
+               className="w-10 h-10 rounded-lg"
+               loading="eager"
+             />
              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
                AI News-Roll
              </span>

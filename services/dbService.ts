@@ -106,8 +106,9 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
   const fetchNews = async () => {
     const { data, error } = await supabase
         .from('news')
-        .select('*')
-        .order('date', { ascending: false });
+        .select('id,title,description,content,date,category,imageUrl,source')
+        .order('date', { ascending: false })
+        .limit(50);
     
     if (error) {
         console.error("Error fetching news:", error);
