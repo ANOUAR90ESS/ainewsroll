@@ -242,13 +242,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const prompt = `Editorial illustration for a news article titled: "${newNews.title}". ${newNews.description || ''}. High quality, modern style.`;
         const res = await generateImage(prompt, "16:9", "1K");
         
-        let imgData = null;
+        let imgData = res.imageData || null;
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            if (part.inlineData) imgData = part.inlineData.data;
         }
         
         if (imgData) {
-            // imgData is now a URL from Unsplash, use it directly
+            // imgData is a URL from Unsplash, use it directly
             setNewNews(prev => ({ ...prev, imageUrl: imgData }));
         } else {
             alert("Failed to generate image.");

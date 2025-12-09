@@ -25,7 +25,7 @@ const ImageStudio: React.FC = () => {
       if (mode === 'generate') {
         const res = await generateImage(prompt, aspectRatio, size);
         // Find image part
-        let imgData = null;
+        let imgData = res.imageData || null;
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            if (part.inlineData) imgData = part.inlineData.data;
         }
@@ -36,7 +36,7 @@ const ImageStudio: React.FC = () => {
         const buffer = await editFile.arrayBuffer();
         const base64 = arrayBufferToBase64(buffer);
         const res = await editImage(prompt, base64);
-         let imgData = null;
+         let imgData = res.imageData || null;
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            if (part.inlineData) imgData = part.inlineData.data;
         }
