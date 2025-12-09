@@ -759,6 +759,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <input 
                     value={rssUrl} 
                     onChange={e => setRssUrl(e.target.value)} 
+                    placeholder="Enter RSS feed URL"
                     className="flex-1 bg-zinc-950 border border-zinc-700 rounded p-2 text-white"
                   />
                   <button 
@@ -847,7 +848,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                <>
                                    <select 
                                      value={newNews.category} 
-                                     onChange={e => setNewNews({...newNews, category: e.target.value})} 
+                                     onChange={e => setNewNews({...newNews, category: e.target.value})}
+                                     aria-label="Select news category"
                                      className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-purple-500 outline-none"
                                    >
                                        {newsCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -915,7 +917,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          <input 
                             type="file"
                             accept="image/*"
-                            onChange={handleFileUpload} 
+                            onChange={handleFileUpload}
+                            aria-label="Upload news image"
                             className="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" 
                          />
                        )}
@@ -1120,6 +1123,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                    <button 
                        onClick={() => setPreviewItem(null)}
                        className="absolute -top-12 right-0 bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-full border border-zinc-700"
+                       aria-label="Close preview"
                    >
                        <X className="w-6 h-6" />
                    </button>
