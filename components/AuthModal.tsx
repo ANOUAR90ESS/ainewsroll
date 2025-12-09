@@ -46,9 +46,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         onClose();
       } else {
         await signUp(email, password);
-        setSuccess("Registration successful! Please check your email for verification.");
+        setSuccess("Registration successful! Redirecting to login...");
         setTimeout(() => {
           setIsLogin(true);
+          setPassword('');
           setSuccess('');
         }, 2000);
       }
@@ -58,13 +59,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
       setLoading(false);
     }
   };
-
-  // Focus the email field when the modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => emailInputRef.current?.focus(), 0);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -76,50 +70,62 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
         aria-modal="true"
         aria-labelledby="auth-modal-title"
         aria-describedby="auth-modal-desc"
+        tabIndex={-1}
+        onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      >
+        <button 
+          type="button"
+          onClick={onClose}
+          aria-label="Close authentication modal"
+          title="Close"
+          className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         <div className="p-8">
           <div className="text-center mb-6">
-             <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                {isForgotPassword ? <Mail className="w-6 h-6 text-indigo-500" /> : isLogin ? <LogIn className="w-6 h-6 text-indigo-500" /> : <UserPlus className="w-6 h-6 text-purple-500" />}
-             </div>
-             <h2 id="auth-modal-title" className="text-2xl font-bold text-white">
-               {isForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
-             </h2>
-             <p id="auth-modal-desc" className="text-zinc-400 text-sm mt-1">
-               {isForgotPassword 
-                 ? 'Enter your email to receive reset instructions' 
-                 : isLogin 
-                 ? 'Enter your credentials to access your account' 
-                 : 'Sign up to start creating with Nexus AI'}
-             </p>
+            <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+              {isForgotPassword ? <Mail className="w-6 h-6 text-indigo-500" /> : isLogin ? <LogIn className="w-6 h-6 text-indigo-500" /> : <UserPlus className="w-6 h-6 text-purple-500" />}
+            </div>
+            <h2 id="auth-modal-title" className="text-2xl font-bold text-white">
+              {isForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}
+            </h2>
+            <p id="auth-modal-desc" className="text-zinc-400 text-sm mt-1">
+              {isForgotPassword 
+                ? 'Enter your email to receive reset instructions' 
+                : isLogin 
+                ? 'Enter your credentials to access your account' 
+                : 'Sign up to start creating with Nexus AI'}
+            </p>
           </div>
 
           {error && (
             <div className="bg-red-900/20 border border-red-900/50 text-red-200 p-3 rounded-lg text-sm mb-4 flex items-center gap-2">
-               <AlertCircle className="w-4 h-4" /> {error}
+              <AlertCircle className="w-4 h-4" /> {error}
             </div>
           )}
 
           {success && (
             <div className="bg-green-900/20 border border-green-900/50 text-green-200 p-3 rounded-lg text-sm mb-4 flex items-center gap-2">
-               <CheckCircle className="w-4 h-4" /> {success}
-            </div>
-          )} <div className="w-12 h-12 bg-indigo-600/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                {isLogin ? <LogIn className="w-6 h-6 text-indigo-500" /> : <UserPlus className="w-6 h-6 text-purple-500" />}
-             </div>
-             <h2 id="auth-modal-title" className="text-2xl font-bold text-white">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-             <p id="auth-modal-desc" className="text-zinc-400 text-sm mt-1">
-               {isLogin ? 'Enter your credentials to access your account' : 'Sign up to start creating with Nexus AI'}
-             </p>
-          </div>
-
-          {error && (
-            <div className="bg-red-900/20 border border-red-900/50 text-red-200 p-3 rounded-lg text-sm mb-4 flex items-center gap-2">
-               <AlertCircle className="w-4 h-4" /> {error}
+              <CheckCircle className="w-4 h-4" /> {success}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
+              <label className="block text-xs font-semibold text-zinc-500 uppercase mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  ref={emailInputRef}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                  placeholder="you@example.com"
+                  required
+                />
               </div>
             </div>
             
@@ -157,8 +163,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
               disabled={loading}
               className={`w-full py-2.5 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all ${
                 isForgotPassword || isLogin
-                  ? 'bg-indigo-600 hover:bg-indigo-500' 
-                  : 'bg-purple-600 hover:bg-purple-500'
+                  ? 'bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700' 
+                  : 'bg-purple-600 hover:bg-purple-500 disabled:bg-purple-700'
               }`}
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
@@ -182,25 +188,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => 
               <p className="text-zinc-500 text-sm">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
                 <button 
-                  onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+                  onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); setPassword(''); }}
                   className={`ml-1 font-semibold hover:underline ${isLogin ? 'text-indigo-400' : 'text-purple-400'}`}
                 >
                   {isLogin ? 'Sign up' : 'Log in'}
                 </button>
               </p>
             )}
-          </div>>
-
-          <div className="mt-6 text-center">
-            <p className="text-zinc-500 text-sm">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button 
-                onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                className={`ml-1 font-semibold hover:underline ${isLogin ? 'text-indigo-400' : 'text-purple-400'}`}
-              >
-                {isLogin ? 'Sign up' : 'Log in'}
-              </button>
-            </p>
           </div>
         </div>
       </div>
