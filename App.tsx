@@ -374,7 +374,7 @@ const App: React.FC = () => {
                 >
                   <Menu className="w-6 h-6" />
                 </button>
-                <div className="font-bold text-lg lg:hidden">Nexus AI</div>
+                <div className="font-bold text-lg lg:hidden">AI News-Roll</div>
             </div>
 
             <div className="flex-1 max-w-md mx-4">
