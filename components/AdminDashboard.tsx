@@ -706,16 +706,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
                 <div>
                     <label className="block text-sm text-zinc-400 mb-1">Description</label>
-                    <textarea required value={newTool.description} onChange={e => setNewTool({...newTool, description: e.target.value})} className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white h-24 focus:border-indigo-500 outline-none" />
+                    <textarea required value={newTool.description} onChange={e => setNewTool({...newTool, description: e.target.value})} placeholder="Tool description" className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white h-24 focus:border-indigo-500 outline-none" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm text-zinc-400 mb-1">Price</label>
-                        <input value={newTool.price} onChange={e => setNewTool({...newTool, price: e.target.value})} className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-indigo-500 outline-none" />
+                        <input value={newTool.price} onChange={e => setNewTool({...newTool, price: e.target.value})} placeholder="Price" className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-indigo-500 outline-none" />
                     </div>
                     <div>
                         <label className="block text-sm text-zinc-400 mb-1">Website URL</label>
-                        <input value={newTool.website} onChange={e => setNewTool({...newTool, website: e.target.value})} className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-indigo-500 outline-none" />
+                        <input value={newTool.website} onChange={e => setNewTool({...newTool, website: e.target.value})} placeholder="Website URL" className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-indigo-500 outline-none" />
                     </div>
                 </div>
                 <div>
@@ -840,8 +840,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     placeholder="New Category Name"
                                     autoFocus
                                   />
-                                  <button type="button" onClick={handleAddNewsCategory} className="bg-purple-600 text-white px-3 rounded hover:bg-purple-500"><Check className="w-4 h-4" /></button>
-                                  <button type="button" onClick={() => setShowAddCategory(false)} className="bg-zinc-800 text-zinc-400 px-3 rounded hover:bg-zinc-700"><X className="w-4 h-4" /></button>
+                                  <button type="button" onClick={handleAddNewsCategory} className="bg-purple-600 text-white px-3 rounded hover:bg-purple-500" aria-label="Add category"><Check className="w-4 h-4" /></button>
+                                  <button type="button" onClick={() => setShowAddCategory(false)} className="bg-zinc-800 text-zinc-400 px-3 rounded hover:bg-zinc-700" aria-label="Cancel"><X className="w-4 h-4" /></button>
                                </div>
                            ) : (
                                <>

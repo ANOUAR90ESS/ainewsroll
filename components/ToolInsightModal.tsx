@@ -36,7 +36,7 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
             <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded">AI Insights</span>
             {tool.name}
           </h3>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white">
+          <button onClick={onClose} className="text-zinc-400 hover:text-white" aria-label="Close modal">
             <X className="w-5 h-5" />
           </button>
         </div>

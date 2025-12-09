@@ -42,6 +42,7 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-md transition-all z-10"
+            aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
