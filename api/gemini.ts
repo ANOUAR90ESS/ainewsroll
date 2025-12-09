@@ -3,11 +3,10 @@ import { GoogleGenAI, Modality, Type } from '@google/genai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-if (!GEMINI_API_KEY) {
-  console.error('GEMINI_API_KEY is not set');
-}
-
 const getClient = () => {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY environment variable is not configured. Please set it in Vercel project settings.');
+  }
   return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 };
 
