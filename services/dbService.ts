@@ -43,10 +43,11 @@ export const subscribeToTools = (callback: (tools: Tool[]) => void) => {
         .order('created_at', { ascending: false });
     
     if (error) {
-        console.error("Error fetching tools:", error);
+        console.error("Error fetching tools:", error.message, error.code, error);
         return;
     }
     
+    console.log('Tools fetched successfully:', data?.length || 0, 'items');
     if (data) callback(data.map(mapToolFromDB));
   };
 
@@ -111,10 +112,11 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
         .limit(50);
     
     if (error) {
-        console.error("Error fetching news:", error);
+        console.error("Error fetching news:", error.message, error.code, error);
         return;
     }
 
+    console.log('News fetched successfully:', data?.length || 0, 'items');
     if (data) callback(data.map(mapNewsFromDB));
   };
 
