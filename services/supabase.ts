@@ -37,6 +37,11 @@ export const supabase = isSupabaseConfigured
         detectSessionInUrl: true,
         storageKey: 'nexus-ai-auth',
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      }
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     })
   : null;

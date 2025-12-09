@@ -63,28 +63,40 @@ export const resetPassword = async (email: string) => {
 export const getCurrentUserProfile = async (): Promise<UserProfile | null> => {
   if (!supabase) return null;
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  try {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.warn('Error getting user:', userError.message);
+      return null;
+    }
+    
+    if (!user) return null;
 
-  // Fetch the role from the 'user_profiles' table
-  const { data: profile, error } = await supabase
-    .from('user_profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+    // Fetch the role from the 'user_profiles' table
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-  if (error || !profile) {
-    // Fallback if profile trigger failed or table doesn't exist yet
+    if (error) {
+      console.warn('Could not fetch profile, returning basic user info:', error.message);
+      // Fallback if profile query fails (RLS restrictions, table doesn't exist, etc.)
+      return {
+        id: user.id,
+        email: user.email || '',
+        role: 'user'
+      };
+    }
+
     return {
       id: user.id,
       email: user.email || '',
-      role: 'user'
+      role: profile?.role as 'user' | 'admin' || 'user'
     };
+  } catch (err: any) {
+    console.error('Unexpected error in getCurrentUserProfile:', err);
+    return null;
   }
-
-  return {
-    id: user.id,
-    email: user.email || '',
-    role: profile.role as 'user' | 'admin'
-  };
 };

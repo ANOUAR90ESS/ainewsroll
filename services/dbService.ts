@@ -106,7 +106,7 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
   const fetchNews = async () => {
     const { data, error } = await supabase
         .from('news')
-        .select('id,title,description,content,date,category,imageUrl,source')
+        .select('id,title,description,content,date,category,image_url,source')
         .order('date', { ascending: false })
         .limit(50);
     
