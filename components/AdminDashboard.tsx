@@ -248,7 +248,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         }
         
         if (imgData) {
-            setNewNews(prev => ({ ...prev, imageUrl: `data:image/png;base64,${imgData}` }));
+            // imgData is now a URL from Unsplash, use it directly
+            setNewNews(prev => ({ ...prev, imageUrl: imgData }));
         } else {
             alert("Failed to generate image.");
         }
