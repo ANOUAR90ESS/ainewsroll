@@ -29,7 +29,8 @@ const ImageStudio: React.FC = () => {
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            if (part.inlineData) imgData = part.inlineData.data;
         }
-        if (imgData) setGeneratedImage(`data:image/png;base64,${imgData}`);
+        // imgData is a URL now
+        if (imgData) setGeneratedImage(imgData);
       } else {
         if (!editFile) throw new Error("Please upload an image to edit");
         const buffer = await editFile.arrayBuffer();
@@ -39,7 +40,7 @@ const ImageStudio: React.FC = () => {
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            if (part.inlineData) imgData = part.inlineData.data;
         }
-        if (imgData) setGeneratedImage(`data:image/png;base64,${imgData}`);
+        if (imgData) setGeneratedImage(imgData);
       }
     } catch (e: any) {
       console.error(e);

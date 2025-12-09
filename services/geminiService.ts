@@ -56,7 +56,7 @@ export const pollVideoOperation = async (operation: any) => {
 // --- Image Studio (Gen & Edit) ---
 export const editImage = async (prompt: string, imageBase64: string) => {
   const data = await callGeminiAPI('editImage', { prompt, imageBase64 });
-  return { imageData: data.imageData };
+  return data;
 };
 
 // --- Audio Transcription & TTS ---
@@ -99,7 +99,7 @@ export const generateToolSlides = async (tool: Tool): Promise<Slide[]> => {
 
 export const generateImage = async (prompt: string, aspectRatio?: string, size?: string) => {
   const data = await callGeminiAPI('generateImage', { prompt, aspectRatio, size });
-  return { imageData: data.imageData };
+  return data;
 };
 
 export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {

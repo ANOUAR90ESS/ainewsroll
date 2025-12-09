@@ -185,7 +185,17 @@ Return a JSON object with: title, description, content`;
         // For image editing, generate a new image based on the edit prompt
         const keywords = prompt.split(' ').slice(0, 3).join('%20');
         const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
-        return res.json({ imageData: imageUrl });
+        return res.json({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                ]
+              }
+            }
+          ]
+        });
       }
 
       case 'transcribeAudio': {
