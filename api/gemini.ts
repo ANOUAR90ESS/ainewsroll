@@ -1,6 +1,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from '@google/genai';
 
+// Force cache invalidation - v2
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const getClient = () => {
@@ -11,6 +12,9 @@ const getClient = () => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Force fresh deploy - cache bust
+  const timestamp = new Date().getTime();
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

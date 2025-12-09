@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 // In-memory cache
 const cache: { [key: string]: { data: string; timestamp: number } } = {};
-const CACHE_TTL = 600000; // 10 minutes in milliseconds
+const CACHE_TTL = 0; // Disabled - regenerate on each request for debugging
 
 function getCache(key: string): string | null {
   const entry = cache[key];
@@ -101,15 +101,17 @@ async function generateSitemap(): Promise<string> {
   </url>
 `;
 
-  // Fetch tools from Supabase
+  // Fetch tools from Supabase with error handling
   try {
-    const { data: tools } = await supabaseAdmin
+    const { data: tools, error: toolsError } = await supabaseAdmin
       .from('tools')
       .select('id, name, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(100);
 
-    if (tools && tools.length > 0) {
+    if (toolsError) {
+      console.error('Error fetching tools for sitemap:', toolsError);
+    } else if (tools && tools.length > 0) {
       tools.forEach((tool: any) => {
         const lastmod = tool.updated_at || tool.created_at || now;
         xml += `  <url>
@@ -121,28 +123,34 @@ async function generateSitemap(): Promise<string> {
 `;
       });
     }
+  } catch (toolsErr) {
+    console.error('Exception fetching tools:', toolsErr);
+  }
 
-    // Fetch news from Supabase
-    const { data: news } = await supabaseAdmin
+  // Fetch news from Supabase with error handling
+  try {
+    const { data: news, error: newsError } = await supabaseAdmin
       .from('news')
       .select('id, title, created_at, updated_at')
       .order('created_at', { ascending: false })
       .limit(50);
 
-    if (news && news.length > 0) {
+    if (newsError) {
+      console.error('Error fetching news for sitemap:', newsError);
+    } else if (news && news.length > 0) {
       news.forEach((article: any) => {
         const lastmod = article.updated_at || article.created_at || now;
         xml += `  <url>
     <loc>${baseUrl}/news/${article.id}</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
 `;
       });
     }
-  } catch (error) {
-    console.error('Error fetching data from Supabase:', error);
+  } catch (newsErr) {
+    console.error('Exception fetching news:', newsErr);
   }
 
   xml += `</urlset>`;
