@@ -66,7 +66,7 @@ Return JSON array of slides.`;
       case 'generateImage': {
         const { prompt } = payload;
         const response = await ai.models.generateContent({
-          model: 'imagen-3.0-generate-001',
+          model: 'gemini-2.0-flash-thinking-exp-1219',
           contents: { parts: [{ text: prompt }] },
           config: { responseModalities: [Modality.IMAGE] }
         });
@@ -170,7 +170,7 @@ Return a JSON object with: title, description, content`;
       case 'editImage': {
         const { prompt, imageBase64 } = payload;
         const response = await ai.models.generateContent({
-          model: 'imagen-3.0-generate-001',
+          model: 'gemini-2.0-flash-thinking-exp-1219',
           contents: {
             parts: [
               { inlineData: { mimeType: 'image/png', data: imageBase64 } },
