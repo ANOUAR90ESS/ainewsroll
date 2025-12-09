@@ -64,13 +64,15 @@ export const getCurrentUserProfile = async (): Promise<UserProfile | null> => {
   if (!supabase) return null;
 
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError) {
-      console.warn('Error getting user:', userError.message);
+    // Prefer getSession to avoid the noisy "Auth session missing" warning when unauthenticated.
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.warn('Error getting session:', sessionError.message);
       return null;
     }
-    
+
+    const user = session?.user;
     if (!user) return null;
 
     // Fetch the role from the 'user_profiles' table
