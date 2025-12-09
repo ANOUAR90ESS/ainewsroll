@@ -240,22 +240,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setGeneratingImg(true);
     try {
         const prompt = `Editorial illustration for a news article titled: "${newNews.title}". ${newNews.description || ''}. High quality, modern style.`;
+        console.log('Generating image with prompt:', prompt);
         const res = await generateImage(prompt, "16:9", "1K");
+        
+        console.log('Full response from generateImage:', res);
+        console.log('Candidates:', res.candidates);
+        console.log('First candidate:', res.candidates?.[0]);
+        console.log('Content:', res.candidates?.[0]?.content);
+        console.log('Parts:', res.candidates?.[0]?.content?.parts);
         
         let imgData = null;
         for (const part of res.candidates?.[0]?.content?.parts || []) {
-           if (part.inlineData) imgData = part.inlineData.data;
+           console.log('Processing part:', part);
+           if (part.inlineData) {
+             console.log('Found inlineData:', part.inlineData);
+             imgData = part.inlineData.data;
+           }
         }
+        
+        console.log('Final imgData:', imgData);
         
         if (imgData) {
             // imgData is a URL from Unsplash, use it directly
+            console.log('Setting imageUrl to:', imgData);
             setNewNews(prev => ({ ...prev, imageUrl: imgData }));
         } else {
             console.error('No image data in response:', res);
             alert("Failed to generate image.");
         }
     } catch (e: any) {
-        console.error(e);
+        console.error('Error in handleGenerateNewsImage:', e);
         alert("Error generating image: " + e.message);
     } finally {
         setGeneratingImg(false);
