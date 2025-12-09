@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'chat': {
         const { message, history } = payload;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: [
             ...history.map((h: any) => ({
               role: h.role,
@@ -44,7 +44,7 @@ Category: ${tool.category}.
 Return JSON array of slides.`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -66,7 +66,7 @@ Return JSON array of slides.`;
       case 'generateImage': {
         const { prompt } = payload;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-image-preview',
+          model: 'gemini-2.0-flash-exp',
           contents: { parts: [{ text: prompt }] },
           config: { responseModalities: [Modality.IMAGE] }
         });
@@ -80,7 +80,7 @@ Return JSON array of slides.`;
         const prompt = `Analyze AI tool trends based on: ${toolNames}. Provide 3 key insights.`;
         
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt
         });
         return res.json({ analysis: response.text });
@@ -89,7 +89,7 @@ Return JSON array of slides.`;
       case 'generateDirectoryTools': {
         const prompt = `Generate 9 diverse AI tools across categories. Return JSON array.`;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -122,7 +122,7 @@ Description: ${description}
 Return a JSON object with: name, description, category, tags, price`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -150,7 +150,7 @@ Description: ${description}
 Return a JSON object with: title, description, content`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt,
           config: {
             responseMimeType: "application/json",
@@ -170,7 +170,7 @@ Return a JSON object with: title, description, content`;
       case 'editImage': {
         const { prompt, imageBase64 } = payload;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-image-preview',
+          model: 'gemini-2.0-flash-exp',
           contents: {
             parts: [
               { inlineData: { mimeType: 'image/png', data: imageBase64 } },
@@ -185,7 +185,7 @@ Return a JSON object with: title, description, content`;
       case 'transcribeAudio': {
         const { audioBase64 } = payload;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: {
             parts: [
               { inlineData: { mimeType: 'audio/wav', data: audioBase64 } },
@@ -199,7 +199,7 @@ Return a JSON object with: title, description, content`;
       case 'generateSpeech': {
         const { text, voice } = payload;
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: { parts: [{ text }] },
           config: {
             responseModalities: [Modality.AUDIO],
@@ -221,7 +221,7 @@ Return a JSON object with: title, description, content`;
     Keep it natural, conversational, and enthusiastic.`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: prompt
         });
         return res.json({ text: response.text || '' });
@@ -232,7 +232,7 @@ Return a JSON object with: title, description, content`;
         const prompt = `TTS the following conversation:\n${script}`;
         
         const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
+          model: 'gemini-2.5-flash',
           contents: { parts: [{ text: prompt }] },
           config: {
             responseModalities: [Modality.AUDIO],
