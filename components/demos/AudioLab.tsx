@@ -102,7 +102,7 @@ const AudioLab: React.FC = () => {
                 if (!ttsInput) return;
                 setLoadingStage('Generating speech...');
                 const res = await generateSpeech(ttsInput, selectedVoice);
-                base64 = res.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || '';
+                base64 = res.audioData || '';
             } else {
                 if (!topicInput) return;
                 
@@ -113,7 +113,7 @@ const AudioLab: React.FC = () => {
                 
                 setLoadingStage('Synthesizing conversation...');
                 const res = await generateMultiSpeakerSpeech(script, speaker1, speaker2);
-                base64 = res.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || '';
+                base64 = res.audioData || '';
             }
 
             if (base64) {

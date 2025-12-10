@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools } from '../services/geminiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool } from '../services/geminiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';
@@ -349,11 +349,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                  if (!items.length && payload.includes(',')) {
                     const lines = payload.split(/\r?\n/).filter(Boolean);
                     if (lines.length > 1) {
-                      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-                      const titleIdx = headers.findIndex(h => h.includes('title'));
-                      const descIdx = headers.findIndex(h => h.includes('description') || h.includes('content'));
-                      const linkIdx = headers.findIndex(h => h === 'link' || h === 'url');
-                      lines.slice(1).forEach((line, i) => {
+                      const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
+                      const titleIdx = headers.findIndex((h: string) => h.includes('title'));
+                      const descIdx = headers.findIndex((h: string) => h.includes('description') || h.includes('content'));
+                      const linkIdx = headers.findIndex((h: string) => h === 'link' || h === 'url');
+                      lines.slice(1).forEach((line: string, i: number) => {
                         const cols = line.split(',');
                         const title = titleIdx >= 0 ? cols[titleIdx] : '';
                         const description = descIdx >= 0 ? cols[descIdx] : '';
@@ -401,14 +401,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setProcessingId(item.id);
     try {
         const extracted = await extractToolFromRSSItem(item.title, item.description);
+
+        // Generate AI image for the tool
+        const toolName = extracted.name || item.title;
+        const toolDescription = extracted.description || item.description;
+        const toolCategory = extracted.category || 'News';
+
+        const aiImageUrl = await generateImageForTool(toolName, toolDescription, toolCategory);
+
         setNewTool({
-            name: extracted.name || item.title,
-            description: extracted.description || item.description,
-            category: extracted.category || 'News',
+            name: toolName,
+            description: toolDescription,
+            category: toolCategory,
             price: extracted.price || 'Unknown',
             tags: extracted.tags || ['RSS'],
-        website: item.link || '#',
-            imageUrl: `https://picsum.photos/seed/${extracted.name?.replace(/\s/g,'')}/400/250`
+            website: item.link || '#',
+            imageUrl: aiImageUrl
         });
         setActiveTab('create');
         setLastSuccess(null);

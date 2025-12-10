@@ -64,20 +64,53 @@ Return JSON array of slides.`;
       }
 
       case 'generateImage': {
-        const { prompt } = payload;
-        const keywords = prompt.split(' ').slice(0, 3).join('%20');
-        const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
-        return res.json({
-          candidates: [
-            {
-              content: {
-                parts: [
-                  { inlineData: { data: imageUrl, mimeType: 'text/url' } }
-                ]
+        const { prompt, aspectRatio = '16:9', size = '1K' } = payload;
+
+        try {
+          // Use Gemini to extract better keywords for image search
+          const keywordResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Extract 2-3 descriptive keywords for finding a relevant stock photo for this prompt: "${prompt}". Return only comma-separated keywords, no explanation.`
+          });
+
+          const keywords = (keywordResponse.text || prompt)
+            .replace(/[^a-zA-Z0-9,\s]/g, '')
+            .split(/[,\s]+/)
+            .filter(Boolean)
+            .slice(0, 3)
+            .join(',');
+
+          // Use Unsplash with enhanced keywords
+          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'technology'}`;
+
+          return res.json({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                  ]
+                }
               }
-            }
-          ]
-        });
+            ]
+          });
+        } catch (error: any) {
+          console.error('Image generation failed:', error);
+          // Final fallback
+          const keywords = prompt.split(' ').slice(0, 3).join(',');
+          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
+          return res.json({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                  ]
+                }
+              }
+            ]
+          });
+        }
       }
 
       case 'analyzeToolTrends': {
@@ -175,19 +208,51 @@ Return a JSON object with: title, description, content`;
 
       case 'editImage': {
         const { prompt } = payload;
-        const keywords = prompt.split(' ').slice(0, 3).join('%20');
-        const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
-        return res.json({
-          candidates: [
-            {
-              content: {
-                parts: [
-                  { inlineData: { data: imageUrl, mimeType: 'text/url' } }
-                ]
+
+        try {
+          // Use Gemini to extract better keywords for image search
+          const keywordResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Extract 2-3 descriptive keywords for finding a relevant stock photo based on this edit request: "${prompt}". Return only comma-separated keywords, no explanation.`
+          });
+
+          const keywords = (keywordResponse.text || prompt)
+            .replace(/[^a-zA-Z0-9,\s]/g, '')
+            .split(/[,\s]+/)
+            .filter(Boolean)
+            .slice(0, 3)
+            .join(',');
+
+          // Use Unsplash with enhanced keywords
+          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'technology'}`;
+
+          return res.json({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                  ]
+                }
               }
-            }
-          ]
-        });
+            ]
+          });
+        } catch (error: any) {
+          console.error('Image edit failed:', error);
+          const keywords = prompt.split(' ').slice(0, 3).join(',');
+          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
+          return res.json({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                  ]
+                }
+              }
+            ]
+          });
+        }
       }
 
       case 'transcribeAudio': {

@@ -37,7 +37,7 @@ export const subscribeToTools = (callback: (tools: Tool[]) => void) => {
   }
 
   const fetchTools = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
         .from('tools')
         .select('*')
         .order('created_at', { ascending: false });
@@ -62,7 +62,7 @@ export const subscribeToTools = (callback: (tools: Tool[]) => void) => {
     .subscribe();
 
   return () => {
-    supabase.removeChannel(channel);
+    supabase!.removeChannel(channel);
   };
 };
 
@@ -105,7 +105,7 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
   }
 
   const fetchNews = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase!
         .from('news')
         .select('id,title,description,content,date,category,image_url,source')
         .order('date', { ascending: false })
@@ -131,7 +131,7 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
     .subscribe();
 
   return () => {
-    supabase.removeChannel(channel);
+    supabase!.removeChannel(channel);
   };
 };
 
@@ -172,4 +172,78 @@ export const deleteNewsFromDb = async (id: string) => {
   // Simply attempt delete. If RLS allows it, it works. If not, 'error' is populated.
   const { error } = await supabase.from('news').delete().eq('id', id);
   if (error) throw error;
+};
+
+// --- Favorites Operations ---
+
+export const getUserFavorites = async (userId: string): Promise<string[]> => {
+  if (!supabase) throw new Error("Supabase not initialized");
+
+  const { data, error } = await supabase
+    .from('user_favorites')
+    .select('tool_id')
+    .eq('user_id', userId);
+
+  if (error) throw error;
+  return data.map(fav => fav.tool_id);
+};
+
+export const addFavorite = async (userId: string, toolId: string) => {
+  if (!supabase) throw new Error("Supabase not initialized");
+
+  const { error } = await supabase
+    .from('user_favorites')
+    .insert({ user_id: userId, tool_id: toolId });
+
+  if (error) throw error;
+};
+
+export const removeFavorite = async (userId: string, toolId: string) => {
+  if (!supabase) throw new Error("Supabase not initialized");
+
+  const { error } = await supabase
+    .from('user_favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('tool_id', toolId);
+
+  if (error) throw error;
+};
+
+export const subscribeToFavorites = (userId: string, callback: (favoriteIds: string[]) => void) => {
+  if (!supabase) {
+    console.warn("Supabase not initialized, skipping favorites subscription.");
+    return () => {};
+  }
+
+  const fetchFavorites = async () => {
+    try {
+      const favoriteIds = await getUserFavorites(userId);
+      callback(favoriteIds);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+    }
+  };
+
+  // Initial fetch
+  fetchFavorites();
+
+  // Realtime subscription
+  const channel = supabase.channel('user_favorites_changes')
+    .on('postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'user_favorites',
+        filter: `user_id=eq.${userId}`
+      },
+      () => {
+        fetchFavorites();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase!.removeChannel(channel);
+  };
 };

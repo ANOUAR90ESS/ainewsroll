@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3 } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3, Heart } from 'lucide-react';
 import { AppView, UserProfile } from '../types';
 
 interface SidebarProps {
@@ -12,14 +13,16 @@ interface SidebarProps {
   onLogoutClick: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  currentView, setView, isOpen, toggleSidebar, 
-  user, onLoginClick, onLogoutClick 
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen, toggleSidebar,
+  user, onLoginClick, onLogoutClick
 }) => {
+  const location = useLocation();
+
   const menuItems = [
-    { id: AppView.HOME, label: 'Tool Directory', icon: LayoutGrid },
-    { id: AppView.SMART_CHAT, label: 'Smart Chat', icon: MessageSquare },
-    { id: AppView.LATEST_NEWS, label: 'Latest News', icon: Newspaper },
+    { path: '/', label: 'Tool Directory', icon: LayoutGrid },
+    { path: '/chat', label: 'Smart Chat', icon: MessageSquare },
+    { path: '/news', label: 'Latest News', icon: Newspaper },
   ];
 
   const sidebarClasses = `fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-300 ease-in-out ${
@@ -56,58 +59,84 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4 px-2">
               Platform
             </div>
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setView(item.id);
-                  if (window.innerWidth < 1024) toggleSidebar();
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                  currentView === item.id
-                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
-                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${currentView === item.id ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                <span className="font-medium">{item.label}</span>
-              </button>
-            ))}
-            
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => {
+                    if (window.innerWidth < 1024) toggleSidebar();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive
+                      ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+
+            {/* My Favorites - Only visible if user is logged in */}
+            {user && (
+              <>
+                <div className="mt-8 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4 px-2">
+                  Personal
+                </div>
+                <Link
+                  to="/favorites"
+                  onClick={() => {
+                    if (window.innerWidth < 1024) toggleSidebar();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    location.pathname === '/favorites'
+                      ? 'bg-red-600/10 text-red-400 border border-red-600/20'
+                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${location.pathname === '/favorites' ? 'text-red-400 fill-current' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                  <span className="font-medium">My Favorites</span>
+                </Link>
+              </>
+            )}
+
             {/* Admin Link - Only visible if user is admin */}
             {user?.role === 'admin' && (
               <>
                 <div className="mt-8 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4 px-2">
                   Management
                 </div>
-                <button
+                <Link
+                    to="/admin"
                     onClick={() => {
-                      setView(AppView.ADMIN);
                       if (window.innerWidth < 1024) toggleSidebar();
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      currentView === AppView.ADMIN
+                      location.pathname === '/admin'
                         ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
                         : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
                     }`}
                   >
-                    <ShieldAlert className={`w-5 h-5 ${currentView === AppView.ADMIN ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                    <ShieldAlert className={`w-5 h-5 ${location.pathname === '/admin' ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
                     <span className="font-medium">Admin Dashboard</span>
-                  </button>
-                <button
+                  </Link>
+                <Link
+                    to="/analytics"
                     onClick={() => {
-                      setView(AppView.ANALYTICS);
                       if (window.innerWidth < 1024) toggleSidebar();
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-                      currentView === AppView.ANALYTICS
+                      location.pathname === '/analytics'
                         ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
                         : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
                     }`}
                   >
-                    <BarChart3 className={`w-5 h-5 ${currentView === AppView.ANALYTICS ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                    <BarChart3 className={`w-5 h-5 ${location.pathname === '/analytics' ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
                     <span className="font-medium">Analytics</span>
-                  </button>
+                  </Link>
               </>
             )}
           </nav>
@@ -126,7 +155,8 @@ const Sidebar: React.FC<SidebarProps> = ({
              )}
 
              {user ? (
-                 <button 
+                 <button
+                  type="button"
                   onClick={onLogoutClick}
                   className="w-full flex items-center justify-center gap-2 bg-red-900/10 hover:bg-red-900/30 text-red-400 py-2.5 rounded-lg transition-colors border border-red-900/20 font-medium"
                  >
@@ -134,7 +164,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                    <span>Sign Out</span>
                  </button>
              ) : (
-                <button 
+                <button
+                  type="button"
                   onClick={onLoginClick}
                   className="w-full flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white py-2.5 rounded-lg transition-colors border border-zinc-700 font-medium"
                 >

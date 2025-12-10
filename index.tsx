@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -12,9 +13,11 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <App />
-      <SpeedInsights />
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <App />
+        <SpeedInsights />
+      </ErrorBoundary>
+    </BrowserRouter>
   </React.StrictMode>
 );

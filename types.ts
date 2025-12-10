@@ -35,7 +35,38 @@ export enum AppView {
   ANALYTICS = 'ANALYTICS',
   ADMIN = 'ADMIN',
   PAGES = 'PAGES',
-  PAYMENT = 'PAYMENT'
+  PAYMENT = 'PAYMENT',
+  FAVORITES = 'FAVORITES'
+}
+
+export interface UserFavorite {
+  id: string;
+  user_id: string;
+  tool_id: string;
+  created_at: string;
+}
+
+export interface ToolReview {
+  id: string;
+  user_id: string;
+  tool_id: string;
+  rating: number; // 1-5
+  title?: string;
+  comment?: string;
+  created_at: string;
+  updated_at: string;
+  user_email?: string; // Populated from join
+}
+
+export interface ToolRatingSummary {
+  tool_id: string;
+  review_count: number;
+  average_rating: number;
+  five_star_count: number;
+  four_star_count: number;
+  three_star_count: number;
+  two_star_count: number;
+  one_star_count: number;
 }
 
 export interface ChatMessage {

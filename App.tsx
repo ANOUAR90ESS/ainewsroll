@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import Sidebar from './components/Sidebar';
 import ToolCard from './components/ToolCard';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AdUnit from './components/AdUnit';
+import SEO from './components/SEO';
 
 // Lazy load heavy components
 const LiveDemo = lazy(() => import('./components/demos/LiveDemo'));
@@ -14,17 +16,21 @@ const NewsFeed = lazy(() => import('./components/demos/NewsFeed'));
 const GenericPage = lazy(() => import('./components/GenericPage'));
 const PaymentPage = lazy(() => import('./components/PaymentPage'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
+const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/geminiService';
-import { 
-  subscribeToTools, 
-  subscribeToNews, 
-  addToolToDb, 
-  deleteToolFromDb, 
+import {
+  subscribeToTools,
+  subscribeToNews,
+  addToolToDb,
+  deleteToolFromDb,
   updateToolInDb,
-  addNewsToDb, 
-  deleteNewsFromDb, 
-  updateNewsInDb
+  addNewsToDb,
+  deleteNewsFromDb,
+  updateNewsInDb,
+  subscribeToFavorites,
+  addFavorite,
+  removeFavorite
 } from './services/dbService';
 import { Menu, Search, AlertCircle, Star, Zap, TrendingUp, Layers, Sparkles } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './services/supabase';
@@ -41,9 +47,25 @@ const LoadingFallback = () => (
 );
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPageId, setCurrentPageId] = useState<string>('');
+
+  // Map URL path to AppView
+  const pathToView = (pathname: string): AppView => {
+    if (pathname === '/' || pathname === '/directory') return AppView.HOME;
+    if (pathname === '/chat') return AppView.SMART_CHAT;
+    if (pathname === '/news') return AppView.LATEST_NEWS;
+    if (pathname === '/analytics') return AppView.ANALYTICS;
+    if (pathname === '/admin') return AppView.ADMIN;
+    if (pathname === '/payment') return AppView.PAYMENT;
+    if (pathname === '/favorites') return AppView.FAVORITES;
+    if (pathname.startsWith('/page/')) return AppView.PAGES;
+    return AppView.HOME;
+  };
+
+  const currentView = pathToView(location.pathname);
   
   // Auth State
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -52,10 +74,15 @@ const App: React.FC = () => {
   // Data State
   const [tools, setTools] = useState<Tool[]>([]);
   const [news, setNews] = useState<NewsArticle[]>([]);
-  
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [dbError, setDbError] = useState(false);
+
+  // Infinite Scroll State
+  const [visibleCount, setVisibleCount] = useState(12);
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
   // Payment State
   const [selectedPlan, setSelectedPlan] = useState('Pro');
@@ -74,8 +101,9 @@ const App: React.FC = () => {
       [AppView.ADMIN]: 'Admin Dashboard | AI News-Roll',
       [AppView.PAGES]: 'Page | AI News-Roll',
       [AppView.PAYMENT]: 'Payment | AI News-Roll',
+      [AppView.FAVORITES]: 'My Favorites | AI News-Roll',
     };
-    
+
     document.title = titleMap[currentView] || 'AI News-Roll';
   }, [currentView]);
 
@@ -111,8 +139,10 @@ const App: React.FC = () => {
             setUser(profile);
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
-            // Reset to home view on signout (using functional update to avoid closure)
-            setCurrentView(prev => prev === AppView.ADMIN ? AppView.HOME : prev);
+            // Reset to home view on signout
+            if (window.location.pathname === '/admin' || window.location.pathname === '/analytics') {
+              navigate('/');
+            }
           }
         });
         
@@ -178,9 +208,45 @@ const App: React.FC = () => {
   const handleLogout = async () => {
       try {
           await signOut();
+          setFavoriteIds([]); // Clear favorites on logout
       } catch (e) {
           console.error("Logout failed", e);
       }
+  };
+
+  // Subscribe to user favorites when logged in
+  useEffect(() => {
+    if (!user || !isSupabaseConfigured) {
+      setFavoriteIds([]);
+      return;
+    }
+
+    const unsubscribe = subscribeToFavorites(user.id, (favoriteToolIds) => {
+      setFavoriteIds(favoriteToolIds);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [user?.id, isSupabaseConfigured]);
+
+  const handleToggleFavorite = async (toolId: string) => {
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      const isFavorite = favoriteIds.includes(toolId);
+      if (isFavorite) {
+        await removeFavorite(user.id, toolId);
+      } else {
+        await addFavorite(user.id, toolId);
+      }
+    } catch (e: any) {
+      console.error("Error toggling favorite:", e);
+      alert(`Failed to ${favoriteIds.includes(toolId) ? 'remove' : 'add'} favorite: ${e.message}`);
+    }
   };
 
   const handleNavigation = (view: AppView, pageId?: string) => {
@@ -193,7 +259,20 @@ const App: React.FC = () => {
         alert("Access Denied: Admins only.");
         return;
       }
-      setCurrentView(view);
+
+      // Map AppView to URL path
+      const viewToPath: Record<AppView, string> = {
+        [AppView.HOME]: '/',
+        [AppView.SMART_CHAT]: '/chat',
+        [AppView.LATEST_NEWS]: '/news',
+        [AppView.ANALYTICS]: '/analytics',
+        [AppView.ADMIN]: '/admin',
+        [AppView.PAYMENT]: '/payment',
+        [AppView.FAVORITES]: '/favorites',
+        [AppView.PAGES]: pageId ? `/page/${pageId}` : '/pages'
+      };
+
+      navigate(viewToPath[view]);
       if (pageId) setCurrentPageId(pageId);
       window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -227,7 +306,7 @@ const App: React.FC = () => {
   const handleAddNews = async (article: NewsArticle) => {
     console.log('handleAddNews called with:', article);
     console.log('isSupabaseConfigured:', isSupabaseConfigured);
-    
+
     try {
         if (isSupabaseConfigured) {
             console.log('Attempting to save news to Supabase...');
@@ -237,7 +316,7 @@ const App: React.FC = () => {
             console.log('Supabase not configured, saving to local state');
             setNews((prev: NewsArticle[]) => [article, ...prev]);
         }
-        setCurrentView(AppView.LATEST_NEWS);
+        navigate('/news');
     } catch (e: any) {
         console.error("Error adding news", e);
         alert(`Failed to save news: ${e.message}`);
@@ -301,10 +380,10 @@ const App: React.FC = () => {
     // Safe filter to avoid crashes on bad data
     const safeTools = tools.filter((t: Tool) => t && t.price && t.category);
     return {
-      featured: safeTools.slice(0, 4),
-      free: safeTools.filter((t: Tool) => (t.price || '').toLowerCase().includes('free') || (t.price || '').toLowerCase().includes('trial')).slice(0, 4),
-      creative: safeTools.filter((t: Tool) => ['Image', 'Video', 'Audio', 'Writing'].includes(t.category)).slice(0, 4),
-      productivity: safeTools.filter((t: Tool) => ['Coding', 'Business', 'Analytics'].includes(t.category)).slice(0, 4)
+      featured: safeTools.slice(0, 20), // Show up to 20 featured tools
+      free: safeTools.filter((t: Tool) => (t.price || '').toLowerCase().includes('free') || (t.price || '').toLowerCase().includes('trial')).slice(0, 20),
+      creative: safeTools.filter((t: Tool) => ['Image', 'Video', 'Audio', 'Writing'].includes(t.category)).slice(0, 20),
+      productivity: safeTools.filter((t: Tool) => ['Coding', 'Business', 'Analytics'].includes(t.category)).slice(0, 20)
     };
   }, [tools]);
 
@@ -314,16 +393,104 @@ const App: React.FC = () => {
         const toolName = tool.name || '';
         const toolDesc = tool.description || '';
         const toolCat = tool.category || '';
-        
-        const matchesSearch = toolName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+
+        const matchesSearch = toolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               toolDesc.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = categoryFilter === 'All' || toolCat.toLowerCase().includes(categoryFilter.toLowerCase());
         return matchesSearch && matchesCategory;
      });
   }, [tools, searchTerm, categoryFilter]);
 
+  // Tools visible with infinite scroll
+  const visibleTools = useMemo(() => {
+    return filteredTools.slice(0, visibleCount);
+  }, [filteredTools, visibleCount]);
+
+  const hasMore = visibleCount < filteredTools.length;
+
   const categories = ['All', 'Writing', 'Image', 'Video', 'Audio', 'Coding', 'Business'];
   const showCollections = searchTerm === '' && categoryFilter === 'All';
+
+  // SEO metadata based on current view
+  const seoProps = useMemo(() => {
+    const baseUrl = 'https://ainewsroll.space';
+
+    switch (currentView) {
+      case AppView.HOME:
+        return {
+          title: 'AI Tool Directory | Discover 50+ AI-Powered Tools | AI News-Roll',
+          description: `Explore ${tools.length}+ cutting-edge AI tools across ${categories.length - 1} categories. Find the perfect AI solution for writing, image generation, video creation, coding, and more.`,
+          keywords: 'AI tools directory, artificial intelligence tools, AI-powered software, generative AI, machine learning tools, AI productivity',
+          canonical: baseUrl,
+          ogType: 'website'
+        };
+
+      case AppView.SMART_CHAT:
+        return {
+          title: 'Smart Chat with Gemini | AI News-Roll',
+          description: 'Chat with Gemini AI powered by Google Search and Maps. Get real-time information and grounded answers.',
+          keywords: 'AI chat, Gemini AI, Google search AI, AI assistant, conversational AI',
+          canonical: `${baseUrl}/chat`,
+          ogType: 'website'
+        };
+
+      case AppView.LATEST_NEWS:
+        return {
+          title: `Latest AI News | ${news.length}+ Articles | AI News-Roll`,
+          description: 'Stay updated with breaking AI news, latest developments in artificial intelligence, machine learning breakthroughs, and tech innovations.',
+          keywords: 'AI news, artificial intelligence news, machine learning news, AI updates, tech news',
+          canonical: `${baseUrl}/news`,
+          ogType: 'website'
+        };
+
+      case AppView.FAVORITES:
+        return {
+          title: `My Favorites | ${favoriteIds.length} Saved Tools | AI News-Roll`,
+          description: 'Your personalized collection of favorite AI tools. Quick access to the tools you love.',
+          keywords: 'AI tools favorites, saved tools, bookmarked AI tools',
+          canonical: `${baseUrl}/favorites`,
+          ogType: 'website'
+        };
+
+      default:
+        return {
+          title: 'AI Tool Directory | AI News-Roll',
+          description: 'Discover the latest AI tools and breaking AI news.',
+          keywords: 'AI tools, artificial intelligence, AI news',
+          canonical: baseUrl,
+          ogType: 'website'
+        };
+    }
+  }, [currentView, tools.length, news.length, favoriteIds.length, categories.length]);
+
+  // Infinite Scroll Effect
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && hasMore) {
+          setVisibleCount((prev) => prev + 12);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore]);
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [searchTerm, categoryFilter]);
 
   const CollectionSection = ({ title, icon: Icon, items, colorClass }: { title: string, icon: any, items: Tool[], colorClass: string }) => {
     if (items.length === 0) return null;
@@ -335,10 +502,16 @@ const App: React.FC = () => {
            </div>
            <h2 className="text-xl font-bold text-white">{title}</h2>
         </div>
-        {/* Updated grid to 2 columns as requested for "two lines" effect */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Responsive grid: 1 col mobile, 2 cols tablet, 3 cols desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((tool: Tool) => (
-            <ToolCard key={tool.id} tool={tool} />
+            <ToolCard
+              key={tool.id}
+              tool={tool}
+              isFavorite={favoriteIds.includes(tool.id)}
+              isAuthenticated={!!user}
+              onToggleFavorite={handleToggleFavorite}
+            />
           ))}
         </div>
       </div>
@@ -347,6 +520,9 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-black text-zinc-100">
+      {/* Dynamic SEO Meta Tags */}
+      <SEO {...seoProps} />
+
       <Sidebar 
         currentView={currentView} 
         setView={handleNavigation} 
@@ -380,13 +556,13 @@ const App: React.FC = () => {
             <div className="flex-1 max-w-md mx-4">
                 <div className="relative group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
-                    <input 
-                      type="text" 
-                      placeholder="Search AI tools..." 
+                    <input
+                      type="text"
+                      placeholder="Search AI tools..."
                       value={searchTerm}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           setSearchTerm(e.target.value);
-                          if (currentView !== AppView.HOME && e.target.value) setCurrentView(AppView.HOME);
+                          if (currentView !== AppView.HOME && e.target.value) navigate('/');
                       }}
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-full pl-10 pr-4 py-2 text-sm text-zinc-200 focus:bg-zinc-950 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all"
                     />
@@ -447,21 +623,24 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Categories */}
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setCategoryFilter(cat)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                          categoryFilter === cat 
-                            ? 'bg-indigo-600 text-white' 
-                            : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  {/* Category Tabs */}
+                  <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+                      {categories.map(cat => (
+                        <button
+                          type="button"
+                          key={cat}
+                          onClick={() => setCategoryFilter(cat)}
+                          className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            categoryFilter === cat
+                              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
+                              : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Content Switcher: Collections vs Grid */}
@@ -518,21 +697,55 @@ const App: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                       <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                         <Search className="w-4 h-4 text-indigo-400" />
-                         Search Results ({filteredTools.length})
-                       </h2>
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
-                          {filteredTools.map((tool: Tool) => (
-                            <ToolCard key={tool.id} tool={tool} />
-                          ))}
-                          {filteredTools.length === 0 && (
-                             <div className="col-span-full text-center py-12 text-zinc-500">
-                               No tools found matching your criteria.
-                             </div>
-                          )}
+                    <div className="space-y-6">
+                       <div className="flex items-center justify-between">
+                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                           <Search className="w-4 h-4 text-indigo-400" />
+                           {categoryFilter === 'All' ? 'All Tools' : categoryFilter} ({filteredTools.length})
+                         </h2>
+                         {visibleCount < filteredTools.length && (
+                           <span className="text-sm text-zinc-500">
+                             Showing {visibleCount} of {filteredTools.length}
+                           </span>
+                         )}
                        </div>
+
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in">
+                          {visibleTools.map((tool: Tool) => (
+                            <ToolCard
+                              key={tool.id}
+                              tool={tool}
+                              isFavorite={favoriteIds.includes(tool.id)}
+                              isAuthenticated={!!user}
+                              onToggleFavorite={handleToggleFavorite}
+                            />
+                          ))}
+                       </div>
+
+                       {filteredTools.length === 0 && (
+                         <div className="text-center py-12 text-zinc-500">
+                           No tools found matching your criteria.
+                         </div>
+                       )}
+
+                       {/* Infinite Scroll Trigger */}
+                       {hasMore && (
+                         <div
+                           ref={loadMoreRef}
+                           className="flex justify-center py-8"
+                         >
+                           <div className="flex flex-col items-center gap-3">
+                             <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                             <p className="text-sm text-zinc-400">Loading more tools...</p>
+                           </div>
+                         </div>
+                       )}
+
+                       {!hasMore && filteredTools.length > 0 && (
+                         <div className="text-center py-8 text-zinc-500 text-sm">
+                           ✨ You've seen all {filteredTools.length} tools
+                         </div>
+                       )}
                     </div>
                   )}
 
@@ -556,10 +769,19 @@ const App: React.FC = () => {
               )}
               {currentView === AppView.PAYMENT && (
                 <Suspense fallback={<LoadingFallback />}>
-                  <PaymentPage 
-                      plan={selectedPlan} 
-                      onBack={() => setCurrentView(AppView.HOME)}
-                      onComplete={() => setCurrentView(AppView.HOME)} 
+                  <PaymentPage
+                      plan={selectedPlan}
+                      onBack={() => navigate('/')}
+                      onComplete={() => navigate('/')}
+                  />
+                </Suspense>
+              )}
+              {currentView === AppView.FAVORITES && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <FavoritesPage
+                    tools={tools}
+                    favoriteIds={favoriteIds}
+                    onToggleFavorite={handleToggleFavorite}
                   />
                 </Suspense>
               )}
@@ -571,17 +793,17 @@ const App: React.FC = () => {
                       user={user}
                       onAddTool={handleAddTool} 
                       onUpdateTool={handleUpdateTool}
-                      onAddNews={handleAddNews} 
+                      onAddNews={handleAddNews}
                       onUpdateNews={handleUpdateNews}
                       onDeleteTool={handleDeleteTool}
                       onDeleteNews={handleDeleteNews}
-                      onBack={() => setCurrentView(AppView.HOME)}
+                      onBack={() => navigate('/')}
                   />
                 </Suspense>
               )}
               {currentView === AppView.PAGES && (
                 <Suspense fallback={<LoadingFallback />}>
-                  <GenericPage pageId={currentPageId} onBack={() => setCurrentView(AppView.HOME)} />
+                  <GenericPage pageId={currentPageId} onBack={() => navigate('/')} />
                 </Suspense>
               )}
             </div>

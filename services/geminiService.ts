@@ -23,33 +23,64 @@ const callGeminiAPI = async (action: string, payload: any) => {
 export const generateDirectoryTools = async (category?: string): Promise<Tool[]> => {
   const data = await callGeminiAPI('generateDirectoryTools', { category });
   const tools = data.tools || [];
-  
-  return tools.map((t: any, i: number) => ({
-    ...t,
-    id: t.id || `gen-${Date.now()}-${i}`,
-    imageUrl: `https://picsum.photos/seed/${t.name.replace(/\s/g, '')}/400/250`
-  }));
+
+  // Generate AI images for each tool
+  const toolsWithImages = await Promise.all(
+    tools.map(async (t: any, i: number) => {
+      try {
+        // Create descriptive prompt for the tool image
+        const imagePrompt = `Professional product image for ${t.name}: ${t.description}. Modern, clean, tech-focused design.`;
+
+        // Generate image with Gemini
+        const imageData = await callGeminiAPI('generateImage', {
+          prompt: imagePrompt,
+          aspectRatio: '16:9',
+          size: '1K'
+        });
+
+        // Extract image URL from response
+        const imageUrl = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ||
+                        `https://source.unsplash.com/1200x630/?${t.category.toLowerCase()},technology`;
+
+        return {
+          ...t,
+          id: t.id || `gen-${Date.now()}-${i}`,
+          imageUrl: imageUrl
+        };
+      } catch (error) {
+        console.error(`Failed to generate image for ${t.name}:`, error);
+        // Fallback to Unsplash
+        return {
+          ...t,
+          id: t.id || `gen-${Date.now()}-${i}`,
+          imageUrl: `https://source.unsplash.com/1200x630/?${t.category.toLowerCase()},technology`
+        };
+      }
+    })
+  );
+
+  return toolsWithImages;
 };
 
 // --- Smart Chat (Search & Maps) ---
 export const sendChatMessage = async (history: {role: string, parts: any[]}[], message: string, useSearch: boolean, useMaps: boolean) => {
-  const data = await callGeminiAPI('chat', { 
-    message, 
-    history, 
-    useSearch, 
-    useMaps 
+  const data = await callGeminiAPI('chat', {
+    message,
+    history,
+    useSearch,
+    useMaps
   });
-  
-  return { text: data.text };
+
+  return data;
 };
 
 // --- Veo Video Generation ---
 // Note: Video generation requires direct client access, consider moving to backend if needed
-export const generateVideo = async (prompt: string, imageBase64?: string, aspectRatio: '16:9' | '9:16' = '16:9') => {
+export const generateVideo = async (prompt: string, imageBase64?: string, aspectRatio: '16:9' | '9:16' = '16:9'): Promise<any> => {
   throw new Error('Video generation moved to backend for security. Please contact admin.');
 };
 
-export const pollVideoOperation = async (operation: any) => {
+export const pollVideoOperation = async (operation: any): Promise<any> => {
   throw new Error('Video generation moved to backend for security. Please contact admin.');
 };
 
@@ -105,4 +136,33 @@ export const generateImage = async (prompt: string, aspectRatio?: string, size?:
 export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
   const data = await callGeminiAPI('analyzeToolTrends', { tools });
   return data.analysis || "Unable to generate analysis.";
+};
+
+// --- Generate Image for Tool ---
+export const generateImageForTool = async (toolName: string, toolDescription: string, category: string): Promise<string> => {
+  try {
+    // Create descriptive prompt for the tool image
+    const imagePrompt = `Professional product screenshot or icon for an AI tool called "${toolName}". ${toolDescription}. Category: ${category}. Modern, clean, tech-focused design with vibrant colors.`;
+
+    // Generate image with Gemini
+    const imageData = await callGeminiAPI('generateImage', {
+      prompt: imagePrompt,
+      aspectRatio: '16:9',
+      size: '1K'
+    });
+
+    // Extract image URL from response
+    const imageUrl = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+    if (imageUrl) {
+      return imageUrl;
+    }
+
+    // Fallback to Unsplash if no image generated
+    throw new Error('No image generated');
+  } catch (error) {
+    console.error('Failed to generate image with Gemini:', error);
+    // Fallback to Unsplash with better keywords
+    return `https://source.unsplash.com/1200x630/?${category.toLowerCase()},technology,${toolName.split(' ')[0].toLowerCase()}`;
+  }
 };

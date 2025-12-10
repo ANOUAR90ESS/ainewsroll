@@ -1,31 +1,90 @@
-import React, { useState } from 'react';
-import { ExternalLink, Tag, Sparkles } from 'lucide-react';
+import React, { useState, memo } from 'react';
+import { ExternalLink, Tag, Sparkles, Heart } from 'lucide-react';
 import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
 
 interface ToolCardProps {
   tool: Tool;
+  isFavorite?: boolean;
+  isAuthenticated?: boolean;
+  onToggleFavorite?: (toolId: string) => void;
 }
 
-const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
+const ToolCard: React.FC<ToolCardProps> = ({
+  tool,
+  isFavorite = false,
+  isAuthenticated = false,
+  onToggleFavorite
+}) => {
   const [showModal, setShowModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onToggleFavorite) {
+      onToggleFavorite(tool.id);
+    }
+  };
 
   return (
     <>
       <div className="group relative bg-zinc-900/50 rounded-xl border border-zinc-800 hover:border-indigo-500/50 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-indigo-900/20 flex flex-col h-full">
         <div className="relative aspect-video overflow-hidden bg-zinc-950">
-          <img 
-            src={tool.imageUrl} 
-            alt={tool.name} 
-            width="1280"
-            height="720"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100"
-            loading="lazy"
-          />
+          {/* Image Loading Placeholder */}
+          {!imageLoaded && !imageError && (
+            <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-zinc-700 border-t-indigo-500 rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          {/* Image */}
+          {!imageError && (
+            <img
+              src={tool.imageUrl}
+              alt={tool.name}
+              width="1280"
+              height="720"
+              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+                imageLoaded ? 'opacity-80 group-hover:opacity-100' : 'opacity-0'
+              }`}
+              loading="lazy"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          )}
+
+          {/* Fallback for broken images */}
+          {imageError && (
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
+              <div className="text-center">
+                <Sparkles className="w-12 h-12 text-zinc-700 mx-auto mb-2" />
+                <p className="text-zinc-600 text-sm font-medium">{tool.category}</p>
+              </div>
+            </div>
+          )}
           <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10">
             {tool.price}
           </div>
-          <button 
+
+          {/* Favorite Button */}
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={handleFavoriteClick}
+              className={`absolute top-3 left-3 backdrop-blur p-2 rounded-full shadow-lg transition-all ${
+                isFavorite
+                  ? 'bg-red-500/90 text-white hover:bg-red-600'
+                  : 'bg-black/70 text-white hover:bg-black/90'
+              }`}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+            </button>
+          )}
+
+          <button
+            type="button"
              onClick={(e) => {
                e.preventDefault();
                setShowModal(true);
@@ -69,4 +128,11 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
   );
 };
 
-export default ToolCard;
+// Memoize component to prevent unnecessary re-renders
+export default memo(ToolCard, (prevProps, nextProps) => {
+  return (
+    prevProps.tool.id === nextProps.tool.id &&
+    prevProps.isFavorite === nextProps.isFavorite &&
+    prevProps.isAuthenticated === nextProps.isAuthenticated
+  );
+});
