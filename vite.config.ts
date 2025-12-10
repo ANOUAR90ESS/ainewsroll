@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
     
     // Support both local .env and Vercel environment variables
     const geminiApiKey = env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || '';
+    const supabaseUrl = env.VITE_SUPABASE_URL || '';
+    const supabaseKey = env.VITE_SUPABASE_ANON_KEY || '';
     
     return {
       server: {
@@ -17,7 +19,9 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.API_KEY': JSON.stringify(geminiApiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
-        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiApiKey)
+        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiApiKey),
+        'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
+        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseKey),
       },
       resolve: {
         alias: {
