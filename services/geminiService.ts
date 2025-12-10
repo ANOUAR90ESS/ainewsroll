@@ -38,9 +38,25 @@ export const generateDirectoryTools = async (category?: string): Promise<Tool[]>
           size: '1K'
         });
 
-        // Extract image URL from response
-        const imageUrl = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data ||
-                        `https://source.unsplash.com/1200x630/?${t.category.toLowerCase()},technology`;
+        // Extract image data from response
+        const imageInlineData = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+        let imageUrl;
+
+        if (imageInlineData) {
+          const { data, mimeType } = imageInlineData;
+
+          // Check if it's a base64 image or URL
+          if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
+            // Base64 image from AI - convert to data URL
+            imageUrl = `data:${mimeType};base64,${data}`;
+          } else {
+            // It's a URL (Unsplash fallback)
+            imageUrl = data;
+          }
+        } else {
+          // Final fallback
+          imageUrl = `https://source.unsplash.com/1200x630/?${t.category.toLowerCase()},technology`;
+        }
 
         return {
           ...t,
@@ -151,11 +167,20 @@ export const generateImageForTool = async (toolName: string, toolDescription: st
       size: '1K'
     });
 
-    // Extract image URL from response
-    const imageUrl = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    // Extract image data from response
+    const imageInlineData = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
 
-    if (imageUrl) {
-      return imageUrl;
+    if (imageInlineData) {
+      const { data, mimeType } = imageInlineData;
+
+      // Check if it's a base64 image or URL
+      if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
+        // Base64 image from AI - convert to data URL
+        return `data:${mimeType};base64,${data}`;
+      } else {
+        // It's a URL (Unsplash fallback)
+        return data;
+      }
     }
 
     // Fallback to Unsplash if no image generated

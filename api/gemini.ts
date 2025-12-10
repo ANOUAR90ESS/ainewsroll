@@ -67,10 +67,65 @@ Return JSON array of slides.`;
         const { prompt, aspectRatio = '16:9', size = '1K' } = payload;
 
         try {
-          // Use Gemini to extract better keywords for image search
+          // Use Imagen 3 via REST API
+          const imageResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': process.env.GEMINI_API_KEY || ''
+              },
+              body: JSON.stringify({
+                instances: [{
+                  prompt: prompt
+                }],
+                parameters: {
+                  sampleCount: 1,
+                  aspectRatio: aspectRatio,
+                  safetySetting: 'block_some',
+                  personGeneration: 'allow_adult'
+                }
+              })
+            }
+          );
+
+          if (!imageResponse.ok) {
+            throw new Error(`Imagen API error: ${imageResponse.status}`);
+          }
+
+          const imageData = await imageResponse.json();
+
+          // Extract base64 image from response
+          const base64Image = imageData.predictions?.[0]?.bytesBase64Encoded;
+
+          if (base64Image) {
+            return res.json({
+              candidates: [
+                {
+                  content: {
+                    parts: [
+                      {
+                        inlineData: {
+                          data: base64Image,
+                          mimeType: 'image/png'
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            });
+          }
+
+          throw new Error('No image data in response');
+        } catch (error: any) {
+          console.error('AI Image generation failed, using Unsplash fallback:', error);
+
+          // Fallback to Unsplash with smart keywords
           const keywordResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `Extract 2-3 descriptive keywords for finding a relevant stock photo for this prompt: "${prompt}". Return only comma-separated keywords, no explanation.`
+            contents: `Extract 2-3 descriptive keywords for this: "${prompt}". Return only comma-separated keywords.`
           });
 
           const keywords = (keywordResponse.text || prompt)
@@ -80,25 +135,8 @@ Return JSON array of slides.`;
             .slice(0, 3)
             .join(',');
 
-          // Use Unsplash with enhanced keywords
           const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'technology'}`;
 
-          return res.json({
-            candidates: [
-              {
-                content: {
-                  parts: [
-                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
-                  ]
-                }
-              }
-            ]
-          });
-        } catch (error: any) {
-          console.error('Image generation failed:', error);
-          // Final fallback
-          const keywords = prompt.split(' ').slice(0, 3).join(',');
-          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
           return res.json({
             candidates: [
               {
