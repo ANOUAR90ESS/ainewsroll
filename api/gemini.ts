@@ -1,7 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from '@google/genai';
 
-// Force cache invalidation - v2
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const getClient = () => {
@@ -12,9 +11,6 @@ const getClient = () => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Force fresh deploy - cache bust
-  const timestamp = new Date().getTime();
-  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -69,11 +65,8 @@ Return JSON array of slides.`;
 
       case 'generateImage': {
         const { prompt } = payload;
-        // Extract key words from prompt for Unsplash search
         const keywords = prompt.split(' ').slice(0, 3).join('%20');
-        // Use Unsplash API for consistent, high-quality placeholder images
         const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
-        // Return in format expected by frontend (Gemini API structure)
         return res.json({
           candidates: [
             {
@@ -181,8 +174,7 @@ Return a JSON object with: title, description, content`;
       }
 
       case 'editImage': {
-        const { prompt, imageBase64 } = payload;
-        // For image editing, generate a new image based on the edit prompt
+        const { prompt } = payload;
         const keywords = prompt.split(' ').slice(0, 3).join('%20');
         const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'abstract'}`;
         return res.json({
@@ -213,19 +205,7 @@ Return a JSON object with: title, description, content`;
       }
 
       case 'generateSpeech': {
-        const { text, voice } = payload;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: { parts: [{ text }] },
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-              voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Kore' } }
-            }
-          }
-        });
-        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        return res.json({ audioData: audioData || null });
+        return res.json({ audioData: null, message: 'Audio generation not yet supported' });
       }
 
       case 'generateConversationScript': {
@@ -244,32 +224,7 @@ Return a JSON object with: title, description, content`;
       }
 
       case 'generateMultiSpeakerSpeech': {
-        const { script, speaker1Config, speaker2Config } = payload;
-        const prompt = `TTS the following conversation:\n${script}`;
-        
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: { parts: [{ text: prompt }] },
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-              multiSpeakerVoiceConfig: {
-                speakerVoiceConfigs: [
-                  {
-                    speaker: speaker1Config.name,
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker1Config.voice } }
-                  },
-                  {
-                    speaker: speaker2Config.name,
-                    voiceConfig: { prebuiltVoiceConfig: { voiceName: speaker2Config.voice } }
-                  }
-                ]
-              }
-            }
-          }
-        });
-        const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        return res.json({ audioData: audioData || null });
+        return res.json({ audioData: null, message: 'Audio generation not yet supported' });
       }
 
       default:
