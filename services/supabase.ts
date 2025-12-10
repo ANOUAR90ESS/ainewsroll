@@ -29,6 +29,17 @@ const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
 // Check if configured (truthy & non-empty)
 export const isSupabaseConfigured = !!supabaseUrl && !!supabaseKey;
 
+// Debug logging
+if (typeof window !== 'undefined') {
+  console.log('Supabase Config Check:', {
+    url_exists: !!supabaseUrl,
+    key_exists: !!supabaseKey,
+    configured: isSupabaseConfigured,
+    url_length: supabaseUrl?.length || 0,
+    key_length: supabaseKey?.length || 0,
+  });
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseKey, {
       auth: {
