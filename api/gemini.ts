@@ -67,39 +67,20 @@ Return JSON array of slides.`;
         const { prompt, aspectRatio = '16:9', size = '1K' } = payload;
 
         try {
-          // Use Imagen 3 via REST API
-          const imageResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': process.env.GEMINI_API_KEY || ''
-              },
-              body: JSON.stringify({
-                instances: [{
-                  prompt: prompt
-                }],
-                parameters: {
-                  sampleCount: 1,
-                  aspectRatio: aspectRatio,
-                  safetySetting: 'block_some',
-                  personGeneration: 'allow_adult'
-                }
-              })
+          // Use Imagen 3 via generateContent API
+          const imageResponse = await ai.models.generateContent({
+            model: 'imagen-3.0-generate-001',
+            contents: prompt,
+            config: {
+              responseModalities: 'image'
             }
-          );
+          });
 
-          if (!imageResponse.ok) {
-            throw new Error(`Imagen API error: ${imageResponse.status}`);
-          }
-
-          const imageData = await imageResponse.json();
-
-          // Extract base64 image from response
-          const base64Image = imageData.predictions?.[0]?.bytesBase64Encoded;
-
-          if (base64Image) {
+          // Check if image was generated
+          const imagePart = imageResponse?.candidates?.[0]?.content?.parts?.[0];
+          
+          if (imagePart?.inlineData) {
+            console.log('✅ Imagen 3 generated image successfully');
             return res.json({
               candidates: [
                 {
@@ -107,8 +88,8 @@ Return JSON array of slides.`;
                     parts: [
                       {
                         inlineData: {
-                          data: base64Image,
-                          mimeType: 'image/png'
+                          data: imagePart.inlineData.data,
+                          mimeType: imagePart.inlineData.mimeType || 'image/png'
                         }
                       }
                     ]
@@ -118,31 +99,47 @@ Return JSON array of slides.`;
             });
           }
 
-          throw new Error('No image data in response');
+          throw new Error('No image data in Imagen response');
         } catch (error: any) {
-          console.error('AI Image generation failed, using Unsplash fallback:', error);
+          console.error('⚠️ Imagen 3 failed, using category-based fallback:', error.message);
 
-          // Fallback to Unsplash with smart keywords
-          const keywordResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Extract 2-3 descriptive keywords for this: "${prompt}". Return only comma-separated keywords.`
-          });
+          // Category-based fallback images (high quality Unsplash)
+          const categoryImages: Record<string, string> = {
+            'Writing': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
+            'Content Generation': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
+            'Image Generation': 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80',
+            'Video Editing': 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1280&h=720&fit=crop&q=80',
+            'Audio Production': 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1280&h=720&fit=crop&q=80',
+            'Voice Synthesis': 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=1280&h=720&fit=crop&q=80',
+            'Music Generation': 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1280&h=720&fit=crop&q=80',
+            'Code Generation': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
+            'Data Analysis': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop&q=80',
+            'Customer Support': 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1280&h=720&fit=crop&q=80',
+          };
 
-          const keywords = (keywordResponse.text || prompt)
-            .replace(/[^a-zA-Z0-9,\s]/g, '')
-            .split(/[,\s]+/)
-            .filter(Boolean)
-            .slice(0, 3)
-            .join(',');
+          // Extract category from prompt
+          let fallbackImage = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+          
+          for (const [category, imageUrl] of Object.entries(categoryImages)) {
+            if (prompt.toLowerCase().includes(category.toLowerCase())) {
+              fallbackImage = imageUrl;
+              break;
+            }
+          }
 
-          const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'technology'}`;
+          console.log(`📸 Using fallback image: ${fallbackImage}`);
 
           return res.json({
             candidates: [
               {
                 content: {
                   parts: [
-                    { inlineData: { data: imageUrl, mimeType: 'text/url' } }
+                    { 
+                      inlineData: { 
+                        data: fallbackImage, 
+                        mimeType: 'text/url' 
+                      } 
+                    }
                   ]
                 }
               }

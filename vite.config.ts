@@ -5,10 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     
-    // Support both local .env and Vercel environment variables
-    const geminiApiKey = env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || '';
+    // ⚠️ SECURITY: Only expose SAFE public variables to the client
+    // NEVER expose API keys or secrets here - they will be visible in the browser
     const supabaseUrl = env.VITE_SUPABASE_URL || '';
-    const supabaseKey = env.VITE_SUPABASE_ANON_KEY || '';
+    const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || '';
     
     return {
       server: {
@@ -17,11 +17,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(geminiApiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiApiKey),
-        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiApiKey),
+        // ✅ ONLY Supabase public variables (safe to expose)
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
-        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseKey),
+        'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+        // ❌ REMOVED: GEMINI_API_KEY - now only accessible server-side via API routes
       },
       resolve: {
         alias: {

@@ -1,5 +1,33 @@
 import { supabase } from './supabase';
-import { Tool, NewsArticle } from '../types';
+import { Tool, NewsArticle, Forum } from '../types';
+import { createForumForTool } from './forumService';
+
+// Generate appropriate image URL based on tool category and name
+const generateToolImageUrl = (toolName: string, category: string): string => {
+  // Category-based image mapping
+  const categoryImages: Record<string, string> = {
+    'Writing': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
+    'Content Generation': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
+    'Image Generation': 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80',
+    'Video Editing': 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1280&h=720&fit=crop&q=80',
+    'Audio Production': 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1280&h=720&fit=crop&q=80',
+    'Voice Synthesis': 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=1280&h=720&fit=crop&q=80',
+    'Music Generation': 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1280&h=720&fit=crop&q=80',
+    'Code Generation': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
+    'Data Analysis': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop&q=80',
+    'Data Analytics': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1280&h=720&fit=crop&q=80',
+    'Customer Support': 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1280&h=720&fit=crop&q=80',
+    'Healthcare': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1280&h=720&fit=crop&q=80',
+    'Personal Productivity': 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=1280&h=720&fit=crop&q=80',
+    'Marketing': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
+    'Natural Language Processing': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    'Text Generation': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    '3D Modeling': 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=1280&h=720&fit=crop&q=80',
+  };
+
+  // Use category-specific image or default AI image
+  return categoryImages[category] || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+};
 
 // Mappers to handle CamelCase (App) <-> SnakeCase (DB)
 const mapToolFromDB = (data: any): Tool => ({
@@ -68,13 +96,31 @@ export const subscribeToTools = (callback: (tools: Tool[]) => void) => {
 
 export const addToolToDb = async (tool: Partial<Tool>) => {
   if (!supabase) throw new Error("Supabase not initialized");
-  
+
+  // Auto-generate image URL if not provided
+  if (!tool.imageUrl || tool.imageUrl.includes('picsum.photos')) {
+    tool.imageUrl = generateToolImageUrl(tool.name || '', tool.category || 'Uncategorized');
+    console.log(`🖼️ Auto-generated image for ${tool.name}: ${tool.imageUrl}`);
+  }
+
   const dbData = mapToolToDB(tool);
   // Remove ID to let DB generate UUID
   delete (dbData as any).id;
-  
-  const { error } = await supabase.from('tools').insert(dbData);
+
+  const { data, error } = await supabase.from('tools').insert(dbData).select();
   if (error) throw error;
+
+  // Automatically create forum for this tool
+  if (data && data[0]) {
+    const toolId = data[0].id;
+    try {
+      await createForumForTool(toolId, tool.name || 'Tool Forum', tool.description || 'Discuss this tool');
+      console.log(`✅ Forum created automatically for tool: ${tool.name}`);
+    } catch (forumError) {
+      console.error('Failed to create forum for tool:', forumError);
+      // Don't throw error - tool was created successfully even if forum wasn't
+    }
+  }
 };
 
 export const updateToolInDb = async (id: string, tool: Partial<Tool>) => {
@@ -247,3 +293,6 @@ export const subscribeToFavorites = (userId: string, callback: (favoriteIds: str
     supabase!.removeChannel(channel);
   };
 };
+
+// --- Forums Operations ---
+

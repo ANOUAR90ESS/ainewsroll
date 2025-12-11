@@ -80,6 +80,25 @@ export interface Slide {
   content: string[];
 }
 
+export interface Forum {
+  id: string;
+  tool_id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  created_by?: string;
+}
+
+export interface ForumPost {
+  id: string;
+  forum_id: string;
+  user_id: string;
+  user_email?: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Global window extension for AI Studio key selection
 declare global {
   interface AIStudio {

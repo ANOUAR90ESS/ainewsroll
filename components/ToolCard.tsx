@@ -27,6 +27,15 @@ const ToolCard: React.FC<ToolCardProps> = ({
     }
   };
 
+  const handleImageError = () => {
+    console.error(`Failed to load image for tool: ${tool.name}`, {
+      imageUrl: tool.imageUrl?.substring(0, 100) + '...',
+      isBase64: tool.imageUrl?.startsWith('data:'),
+      length: tool.imageUrl?.length
+    });
+    setImageError(true);
+  };
+
   return (
     <>
       <div className="group relative bg-zinc-900/50 rounded-xl border border-zinc-800 hover:border-indigo-500/50 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-indigo-900/20 flex flex-col h-full">
@@ -39,7 +48,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
           )}
 
           {/* Image */}
-          {!imageError && (
+          {!imageError && tool.imageUrl && (
             <img
               src={tool.imageUrl}
               alt={tool.name}
@@ -50,12 +59,12 @@ const ToolCard: React.FC<ToolCardProps> = ({
               }`}
               loading="lazy"
               onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
+              onError={handleImageError}
             />
           )}
 
-          {/* Fallback for broken images */}
-          {imageError && (
+          {/* Fallback for broken or missing images */}
+          {(imageError || !tool.imageUrl) && (
             <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
               <div className="text-center">
                 <Sparkles className="w-12 h-12 text-zinc-700 mx-auto mb-2" />

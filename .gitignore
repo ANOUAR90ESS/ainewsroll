@@ -1,9 +1,16 @@
-# Environment files
+# ⚠️ CRITICAL SECURITY - Environment files with secrets
 .env
 .env.*
+!.env.example
 *.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.staging
+server/.env
 
-# Notes & guides
+# Security & sensitive docs
 *guide*
 *notes*
 SECURITY_NOTE.md
@@ -19,10 +26,18 @@ SUPABASE_SETUP.md
 commit.bat
 SEO_GUIDE.md
 PER
-# Node stuff (اختياري لكن مهم)
+env.d.tsx
+
+# Scripts that might contain secrets
+query-db.js
+fix-images.js
+update-real-images.js
+update-all-images.js
+# Node stuff
 node_modules/
 dist/
 .build/
+
 # Logs
 logs
 *.log
@@ -36,18 +51,6 @@ node_modules
 dist
 dist-ssr
 *.local
-
-# Environment variables
-.env
-.env.local
-.env.production
-.env.development
-.env.test
-.env.staging
-.env.production
-.env.example
-server/.env
-env.d.tsx
 env.example.tsx
 env*.tsx
 

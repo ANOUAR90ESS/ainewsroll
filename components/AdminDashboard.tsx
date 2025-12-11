@@ -125,10 +125,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleGenerateCandidates = async () => {
     setIsGeneratingBatch(true);
     try {
+        console.log('🚀 Starting batch generation of AI tools with images...');
         const generatedTools = await generateDirectoryTools();
+        console.log(`✅ Successfully generated ${generatedTools.length} tools with AI images`);
         setReviewQueue(prev => [...generatedTools, ...prev]);
         setLastSuccess(null);
     } catch(e: any) {
+        console.error('❌ Batch generation error:', e);
         alert("Batch generation failed: " + e.message);
     } finally {
         setIsGeneratingBatch(false);
@@ -163,6 +166,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     e.preventDefault();
     if (!newTool.name || !newTool.description) return;
 
+    // Generate appropriate image URL based on category
+    const categoryImages: Record<string, string> = {
+      'Writing': 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
+      'Content Generation': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
+      'Image Generation': 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80',
+      'Video Editing': 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1280&h=720&fit=crop&q=80',
+      'Audio Production': 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1280&h=720&fit=crop&q=80',
+      'Voice Synthesis': 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=1280&h=720&fit=crop&q=80',
+      'Music Generation': 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1280&h=720&fit=crop&q=80',
+      'Code Generation': 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
+      'Data Analysis': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop&q=80',
+      'Data Analytics': 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1280&h=720&fit=crop&q=80',
+      'Customer Support': 'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1280&h=720&fit=crop&q=80',
+      'Healthcare': 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1280&h=720&fit=crop&q=80',
+      'Personal Productivity': 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=1280&h=720&fit=crop&q=80',
+      'Marketing': 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
+      'Natural Language Processing': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+      'Text Generation': 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+      '3D Modeling': 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=1280&h=720&fit=crop&q=80',
+    };
+
+    const defaultImage = categoryImages[newTool.category || ''] || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+
     const tool: Tool = {
       id: editingId || newTool.id || '', 
       name: newTool.name,
@@ -171,7 +197,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       price: newTool.price || 'Free',
       tags: newTool.tags || [],
       website: newTool.website || '#',
-      imageUrl: newTool.imageUrl || `https://picsum.photos/seed/${newTool.name}/400/250`
+      imageUrl: newTool.imageUrl || defaultImage
     };
 
     if (editingId) {
@@ -250,20 +276,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         console.log('Parts:', res.candidates?.[0]?.content?.parts);
         
         let imgData = null;
+        let mimeType = null;
+
         for (const part of res.candidates?.[0]?.content?.parts || []) {
            console.log('Processing part:', part);
            if (part.inlineData) {
              console.log('Found inlineData:', part.inlineData);
              imgData = part.inlineData.data;
+             mimeType = part.inlineData.mimeType;
            }
         }
-        
+
         console.log('Final imgData:', imgData);
-        
+        console.log('MimeType:', mimeType);
+
         if (imgData) {
-            // imgData is a URL from Unsplash, use it directly
-            console.log('Setting imageUrl to:', imgData);
-            setNewNews(prev => ({ ...prev, imageUrl: imgData }));
+            // Check if it's a base64 image or URL
+            if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
+                // Base64 image from AI - convert to data URL
+                const imageUrl = `data:${mimeType};base64,${imgData}`;
+                console.log('Setting AI-generated base64 imageUrl');
+                setNewNews(prev => ({ ...prev, imageUrl }));
+            } else {
+                // It's a URL (Unsplash fallback)
+                console.log('Setting Unsplash URL:', imgData);
+                setNewNews(prev => ({ ...prev, imageUrl: imgData }));
+            }
         } else {
             console.error('No image data in response:', res);
             alert("Failed to generate image.");
@@ -623,7 +661,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 Auto-Generate Candidates
                             </h3>
                             <p className="text-sm text-zinc-400 mt-1">
-                                Generate fictional AI tools with Gemini 2.5 Flash, then review before publishing.
+                                Generate 9 fictional AI tools with Gemini 2.5 Flash + AI-generated images with Imagen 3, then review before publishing.
                             </p>
                         </div>
                         <button
@@ -632,7 +670,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             className="shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-2.5 px-6 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50"
                         >
                             {isGeneratingBatch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            <span>Generate Candidates</span>
+                            <span>{isGeneratingBatch ? 'Generating Tools & AI Images...' : 'Generate Candidates'}</span>
                         </button>
                     </div>
 
