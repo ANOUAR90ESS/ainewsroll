@@ -389,6 +389,55 @@ Return a JSON object with: title, description, content`;
         return res.json({ audioData: null, message: 'Audio generation not yet supported' });
       }
 
+      case 'generateToolFromTopic': {
+        const { topic, prompt } = payload;
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                description: { type: Type.STRING },
+                category: { type: Type.STRING },
+                price: { type: Type.STRING },
+                tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+                website: { type: Type.STRING },
+                how_to_use: { type: Type.STRING },
+                features_detailed: { type: Type.STRING },
+                use_cases: { type: Type.STRING },
+                pros_cons: { type: Type.STRING }
+              }
+            }
+          }
+        });
+        return res.json(JSON.parse(response.text || "{}"));
+      }
+
+      case 'enrichToolDetails': {
+        const { toolName, prompt } = payload;
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                how_to_use: { type: Type.STRING },
+                features_detailed: { type: Type.STRING },
+                use_cases: { type: Type.STRING },
+                pros_cons: { type: Type.STRING },
+                screenshots_urls: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            }
+          }
+        });
+        return res.json(JSON.parse(response.text || "{}"));
+      }
+
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }
