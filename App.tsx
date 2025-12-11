@@ -408,7 +408,7 @@ const App: React.FC = () => {
 
   const hasMore = visibleCount < filteredTools.length;
 
-  const categories = ['All', 'Writing', 'Image', 'Video', 'Audio', 'Coding', 'Business'];
+  const categories = ['All', 'Writing', 'Image', 'Video', 'Audio', 'Coding', 'Business', 'Data Analysis', 'Education', 'Healthcare', 'Design'];
   const showCollections = searchTerm === '' && categoryFilter === 'All';
 
   // SEO metadata based on current view
@@ -625,13 +625,13 @@ const App: React.FC = () => {
 
                   {/* Category Tabs */}
                   <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-1">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11 gap-1">
                       {categories.map(cat => (
                         <button
                           type="button"
                           key={cat}
                           onClick={() => setCategoryFilter(cat)}
-                          className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          className={`px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                             categoryFilter === cat
                               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'
                               : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
