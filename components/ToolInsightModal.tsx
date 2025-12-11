@@ -52,7 +52,7 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
             onClick={() => handleTabChange('slides')}
             className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${activeTab === 'slides' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-zinc-500 hover:text-zinc-300'}`}
           >
-            <MonitorPlay className="w-4 h-4" /> Slides
+            <MonitorPlay className="w-4 h-4" /> Create course
           </button>
         </div>
 
@@ -60,7 +60,15 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
            {activeTab === 'summary' && (
              <div className="space-y-4">
                <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
-                 <h4 className="text-sm font-semibold text-zinc-400 uppercase mb-2">About the Tool</h4>
+                 <div className="flex items-start justify-between gap-3 mb-2">
+                   <h4 className="text-sm font-semibold text-zinc-400 uppercase">About the Tool</h4>
+                   <button
+                     onClick={() => handleTabChange('slides')}
+                     className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-full transition-colors"
+                   >
+                     <MonitorPlay className="w-3 h-3" /> Create course
+                   </button>
+                 </div>
                  <p className="text-lg text-white leading-relaxed">{tool.description}</p>
                </div>
                <div className="grid grid-cols-2 gap-4">
@@ -81,19 +89,19 @@ const ToolInsightModal: React.FC<ToolInsightModalProps> = ({ tool, onClose }) =>
                {loading ? (
                  <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 gap-3">
                    <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-                   Generating presentation...
+                   Creating course outline...
                  </div>
                ) : (
                  <div className="space-y-6">
                    {slides.map((slide, i) => (
                      <div key={i} className="bg-white text-black p-6 rounded-lg shadow-xl border border-zinc-200">
-                       <h2 className="text-2xl font-bold mb-4 text-indigo-700">{slide.title}</h2>
+                       <h2 className="text-2xl font-bold mb-4 text-indigo-700">Module {i + 1}: {slide.title}</h2>
                        <ul className="list-disc pl-5 space-y-2">
                          {slide.content.map((point, j) => (
                            <li key={j} className="text-lg text-zinc-800">{point}</li>
                          ))}
                        </ul>
-                       <div className="mt-4 text-right text-xs text-zinc-400">Slide {i + 1}</div>
+                       <div className="mt-4 text-right text-xs text-zinc-400">Course section {i + 1}</div>
                      </div>
                    ))}
                  </div>
