@@ -1173,35 +1173,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="grid gap-4">
                {rssItems.length > 0 && <h3 className="text-white font-semibold">Feed Items ({rssItems.length})</h3>}
                {rssItems.map(item => (
-                 <div key={item.id} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col md:flex-row gap-4 items-start md:items-center">
-                    <div className="flex-1">
-                       <h4 className="text-lg font-bold text-white mb-1">{item.title}</h4>
-                       <p className="text-sm text-zinc-400 line-clamp-2">{item.description}</p>
+                 <div key={item.id} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col gap-2">
+                    <div>
+                       <h4 className="text-sm font-bold text-white line-clamp-1">{item.title}</h4>
+                       <p className="text-xs text-zinc-400 line-clamp-1">{item.description}</p>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
+                    <div className="flex flex-wrap gap-1.5">
                         <button 
                             onClick={() => convertRssToTool(item)}
                             disabled={!!processingId}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                            title="Edit as Tool"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
                         >
                             {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LayoutGrid className="w-3 h-3" />}
-                            Edit as Tool
+                            <span className="hidden sm:inline">Tool</span>
                         </button>
                         <button 
                             onClick={() => convertRssToNews(item)}
                             disabled={!!processingId}
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                            title="Edit as News"
+                            className="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
                         >
                             {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Newspaper className="w-3 h-3" />}
-                            Edit as News
+                            <span className="hidden sm:inline">News</span>
                         </button>
                         <button 
                           onClick={() => publishRssAsNews(item)}
                           disabled={!!processingId}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                          title="Publish News"
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
                         >
                           {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                          Publish News
+                          <span className="hidden sm:inline">Publish</span>
                         </button>
                     </div>
                  </div>
