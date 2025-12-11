@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
-import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert } from 'lucide-react';
+import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database } from 'lucide-react';
 import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool } from '../services/geminiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
@@ -95,6 +95,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: 'Audio', icon: Mic, color: 'text-orange-400' },
     { id: 'Coding', icon: Code, color: 'text-blue-400' },
     { id: 'Business', icon: Briefcase, color: 'text-amber-400' },
+    { id: 'Data Analysis', icon: Database, color: 'text-cyan-400' },
+    { id: 'Education', icon: GraduationCap, color: 'text-green-400' },
+    { id: 'Healthcare', icon: Activity, color: 'text-red-400' },
+    { id: 'Design', icon: Palette, color: 'text-violet-400' },
   ];
 
   // --- Handlers ---
@@ -762,8 +766,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <option value="Coding">Coding</option>
                                     <option value="Business">Business</option>
                                     <option value="Data Analysis">Data Analysis</option>
-                                    <option value="Healthcare">Healthcare</option>
                                     <option value="Education">Education</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="Design">Design</option>
                                 </select>
                             </div>
 
@@ -897,20 +902,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                     <div>
                         <label className="block text-sm text-zinc-400 mb-2">Category</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         {toolCategories.map(cat => (
                             <button
                             key={cat.id}
                             type="button"
                             onClick={() => setNewTool({...newTool, category: cat.id})}
-                            className={`flex flex-col items-center justify-center p-2 rounded-lg border transition-all ${
+                            className={`flex flex-col items-center justify-center p-2.5 rounded-lg border transition-all ${
                                 newTool.category === cat.id 
                                 ? 'bg-indigo-600/20 border-indigo-500 text-white' 
                                 : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:bg-zinc-900 hover:border-zinc-700'
                             }`}
                             >
-                            <cat.icon className={`w-5 h-5 mb-1 ${newTool.category === cat.id ? 'text-white' : cat.color}`} />
-                            <span className="text-[10px] uppercase font-semibold">{cat.id}</span>
+                            <cat.icon className={`w-4 h-4 mb-1 ${newTool.category === cat.id ? 'text-white' : cat.color}`} />
+                            <span className="text-[9px] uppercase font-semibold text-center leading-tight">{cat.id}</span>
                             </button>
                         ))}
                         </div>
