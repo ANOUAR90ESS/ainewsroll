@@ -257,7 +257,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       price: newTool.price || 'Free',
       tags: newTool.tags || [],
       website: newTool.website || '#',
-      imageUrl: newTool.imageUrl || defaultImage
+      imageUrl: newTool.imageUrl || defaultImage,
+      // Detailed fields
+      how_to_use: newTool.how_to_use || '',
+      features_detailed: newTool.features_detailed || '',
+      use_cases: newTool.use_cases || '',
+      pros_cons: newTool.pros_cons || '',
+      screenshots_urls: newTool.screenshots_urls || []
     };
 
     if (editingId) {
