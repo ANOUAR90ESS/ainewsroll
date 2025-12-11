@@ -43,6 +43,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     tags: []
   });
   const [tagInput, setTagInput] = useState('');
+  const [toolImageMode, setToolImageMode] = useState<'url' | 'upload' | 'generate'>('url');
+  const [generatingToolImg, setGeneratingToolImg] = useState(false);
   
   // Generation & Review State
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -97,6 +99,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const resetToolForm = () => {
       setNewTool({ name: '', description: '', category: 'Writing', price: 'Freemium', website: 'https://', tags: [] });
+      setToolImageMode('url');
       setEditingId(null);
   };
 
@@ -108,6 +111,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const startEditingTool = (tool: Tool) => {
       setNewTool(tool);
+      setToolImageMode('url');
       setEditingId(tool.id);
       setActiveTab('create');
       setLastSuccess(null);
@@ -258,6 +262,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleToolFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const buffer = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(buffer);
+        const mimeType = file.type;
+        setNewTool(prev => ({ ...prev, imageUrl: `data:${mimeType};base64,${base64}` }));
+      } catch (err) {
+        console.error("Error reading file:", err);
+      }
+    }
+  };
+
   const handleGenerateNewsImage = async () => {
     if (!newNews.title) {
         alert("Please enter a title first to generate an image.");
@@ -265,7 +283,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingImg(true);
     try {
-        const prompt = `Editorial illustration for a news article titled: "${newNews.title}". ${newNews.description || ''}. High quality, modern style.`;
+        const prompt = `Create a professional editorial illustration for a news article. Title: "${newNews.title}". Category: ${newNews.category}. Description: ${newNews.description || 'Not provided'}. Full content: ${newNews.content || 'Not provided'}. Source: ${newNews.source || 'Unknown'}. The image should visually represent the main themes and topics discussed in this article. High quality, modern, professional news illustration style.`;
         console.log('Generating image with prompt:', prompt);
         const res = await generateImage(prompt, "16:9", "1K");
         
@@ -311,6 +329,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         alert("Error generating image: " + e.message);
     } finally {
         setGeneratingImg(false);
+    }
+  };
+
+  const handleGenerateToolImage = async () => {
+    if (!newTool.name) {
+        alert("Please enter a tool name first to generate an image.");
+        return;
+    }
+    setGeneratingToolImg(true);
+    try {
+        const prompt = `Create a professional icon or illustration for an AI tool. Name: "${newTool.name}". Category: ${newTool.category}. Description: ${newTool.description || 'Not provided'}. Price: ${newTool.price || 'Unknown'}. Website: ${newTool.website || 'Unknown'}. Tags: ${newTool.tags?.join(', ') || 'None'}. The image should visually represent what this ${newTool.category} tool does based on its description and purpose. High quality, modern tech style, professional.`;
+        console.log('Generating tool image with prompt:', prompt);
+        const res = await generateImage(prompt, "16:9", "1K");
+        
+        let imgData = null;
+        let mimeType = null;
+
+        for (const part of res.candidates?.[0]?.content?.parts || []) {
+           if (part.inlineData) {
+             imgData = part.inlineData.data;
+             mimeType = part.inlineData.mimeType;
+           }
+        }
+
+        if (imgData) {
+            if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
+                const imageUrl = `data:${mimeType};base64,${imgData}`;
+                setNewTool(prev => ({ ...prev, imageUrl }));
+            } else {
+                setNewTool(prev => ({ ...prev, imageUrl: imgData }));
+            }
+        } else {
+            alert("Failed to generate tool image.");
+        }
+    } catch (e: any) {
+        console.error('Error in handleGenerateToolImage:', e);
+        alert("Error generating tool image: " + e.message);
+    } finally {
+        setGeneratingToolImg(false);
     }
   };
 
@@ -798,6 +855,79 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Type and press Enter..."
                     />
                 </div>
+                
+                <div>
+                  <label className="block text-sm text-zinc-400 mb-2">Featured Image</label>
+                  <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4">
+                    <div className="flex gap-4 mb-4 border-b border-zinc-800 pb-2">
+                      <button 
+                         type="button" 
+                         onClick={() => setToolImageMode('url')}
+                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${toolImageMode === 'url' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                         <Link className="w-4 h-4" /> Image URL
+                      </button>
+                      <button 
+                         type="button" 
+                         onClick={() => setToolImageMode('upload')}
+                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${toolImageMode === 'upload' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                         <Upload className="w-4 h-4" /> Upload
+                      </button>
+                      <button 
+                         type="button" 
+                         onClick={() => setToolImageMode('generate')}
+                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${toolImageMode === 'generate' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                      >
+                         <Wand2 className="w-4 h-4" /> Generate with AI
+                      </button>
+                    </div>
+
+                    {toolImageMode === 'url' && (
+                      <input 
+                         value={newTool.imageUrl || ''} 
+                         onChange={e => setNewTool({...newTool, imageUrl: e.target.value})} 
+                         className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-white" 
+                         placeholder="https://..." 
+                      />
+                    )}
+
+                    {toolImageMode === 'upload' && (
+                      <input 
+                         type="file"
+                         accept="image/*"
+                         onChange={handleToolFileUpload}
+                         aria-label="Upload tool image"
+                         className="w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" 
+                      />
+                    )}
+
+                    {toolImageMode === 'generate' && (
+                       <div className="flex gap-2 items-center">
+                           <div className="text-sm text-zinc-400 italic flex-1">
+                              Uses <strong>Gemini Imagen 3</strong> to create an image based on the tool name and category.
+                           </div>
+                           <button 
+                             type="button" 
+                             onClick={handleGenerateToolImage}
+                             disabled={generatingToolImg || !newTool.name}
+                             className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50"
+                           >
+                             {generatingToolImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                             Generate Image
+                           </button>
+                       </div>
+                    )}
+
+                    {newTool.imageUrl && (
+                      <div className="mt-4 relative rounded-lg overflow-hidden border border-zinc-700 h-48 w-full">
+                        <img src={newTool.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">Preview</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="flex gap-3 pt-2">
                         <button type="button" onClick={() => handlePreview('tool')} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 border border-zinc-700">
                             <Eye className="w-4 h-4" /> Preview
