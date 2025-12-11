@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3, Heart } from 'lucide-react';
+import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3, Heart, DollarSign, Sparkles, Clock } from 'lucide-react';
 import { AppView, UserProfile } from '../types';
 
 interface SidebarProps {
@@ -20,7 +20,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
 
   const menuItems = [
-    { path: '/', label: 'Tool Directory', icon: LayoutGrid },
+    { path: '/', label: 'All Tools', icon: LayoutGrid },
+    { path: '/tools/free', label: 'Free Tools', icon: Sparkles },
+    { path: '/tools/paid', label: 'Paid Tools', icon: DollarSign },
+    { path: '/tools/latest', label: 'Latest Tools', icon: Clock },
     { path: '/chat', label: 'Smart Chat', icon: MessageSquare },
     { path: '/news', label: 'Latest News', icon: Newspaper },
   ];

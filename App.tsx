@@ -60,6 +60,9 @@ const App: React.FC = () => {
     if (pathname.startsWith('/tool/')) return AppView.TOOL_DETAIL;
     if (pathname.startsWith('/category/')) return AppView.CATEGORY;
     if (pathname === '/' || pathname === '/directory') return AppView.HOME;
+    if (pathname === '/tools/free') return AppView.FREE_TOOLS;
+    if (pathname === '/tools/paid') return AppView.PAID_TOOLS;
+    if (pathname === '/tools/latest') return AppView.LATEST_TOOLS;
     if (pathname === '/chat') return AppView.SMART_CHAT;
     if (pathname === '/news') return AppView.LATEST_NEWS;
     if (pathname === '/analytics') return AppView.ANALYTICS;
@@ -416,18 +419,42 @@ const App: React.FC = () => {
         const toolName = tool.name || '';
         const toolDesc = tool.description || '';
         const toolCat = tool.category || '';
+        const toolPrice = tool.price || '';
 
         const matchesSearch = toolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               toolDesc.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = categoryFilter === 'All' || toolCat.toLowerCase().includes(categoryFilter.toLowerCase());
-        return matchesSearch && matchesCategory;
+        
+        // Apply view-specific filters
+        let matchesView = true;
+        if (currentView === AppView.FREE_TOOLS) {
+          // Free tools: Free, Freemium, or Trial
+          matchesView = toolPrice.toLowerCase().includes('free') || toolPrice.toLowerCase().includes('trial');
+        } else if (currentView === AppView.PAID_TOOLS) {
+          // Paid tools: anything with $ or "Paid" that isn't Free/Freemium
+          matchesView = (toolPrice.includes('$') || toolPrice.toLowerCase().includes('paid')) && 
+                       !toolPrice.toLowerCase().includes('free');
+        }
+        // LATEST_TOOLS sorting will be handled separately after filtering
+        
+        return matchesSearch && matchesCategory && matchesView;
      });
-  }, [tools, searchTerm, categoryFilter]);
+  }, [tools, searchTerm, categoryFilter, currentView]);
 
   // Tools visible with infinite scroll
   const visibleTools = useMemo(() => {
-    return filteredTools.slice(0, visibleCount);
-  }, [filteredTools, visibleCount]);
+    let toolsToShow = filteredTools;
+    
+    // Sort by latest (newest first) for LATEST_TOOLS view
+    if (currentView === AppView.LATEST_TOOLS) {
+      toolsToShow = [...filteredTools].sort((a, b) => {
+        // Assuming tools have created_at or using id as timestamp indicator
+        return b.id.localeCompare(a.id); // Newer IDs come first
+      });
+    }
+    
+    return toolsToShow.slice(0, visibleCount);
+  }, [filteredTools, visibleCount, currentView]);
 
   const hasMore = visibleCount < filteredTools.length;
 
@@ -491,6 +518,38 @@ const App: React.FC = () => {
           description: `Explore ${tools.length}+ cutting-edge AI tools across ${categories.length - 1} categories. Find the perfect AI solution for writing, image generation, video creation, coding, and more.`,
           keywords: 'AI tools directory, artificial intelligence tools, AI-powered software, generative AI, machine learning tools, AI productivity',
           canonical: baseUrl,
+          ogType: 'website'
+        };
+
+      case AppView.FREE_TOOLS:
+        const freeCount = tools.filter(t => (t.price || '').toLowerCase().includes('free')).length;
+        return {
+          title: `Free AI Tools | ${freeCount}+ No-Cost AI Solutions | AI News-Roll`,
+          description: `Discover ${freeCount}+ free and freemium AI tools. Get started with powerful AI capabilities without spending a dime.`,
+          keywords: 'free AI tools, freemium AI software, no-cost AI tools, free generative AI, free AI apps',
+          canonical: `${baseUrl}/tools/free`,
+          ogType: 'website'
+        };
+
+      case AppView.PAID_TOOLS:
+        const paidCount = tools.filter(t => {
+          const price = (t.price || '').toLowerCase();
+          return (price.includes('$') || price.includes('paid')) && !price.includes('free');
+        }).length;
+        return {
+          title: `Premium AI Tools | ${paidCount}+ Professional Solutions | AI News-Roll`,
+          description: `Browse ${paidCount}+ premium AI tools for professionals. Enterprise-grade AI solutions worth the investment.`,
+          keywords: 'premium AI tools, paid AI software, professional AI tools, enterprise AI, paid generative AI',
+          canonical: `${baseUrl}/tools/paid`,
+          ogType: 'website'
+        };
+
+      case AppView.LATEST_TOOLS:
+        return {
+          title: `Latest AI Tools | Newest Additions | AI News-Roll`,
+          description: `Explore the newest AI tools added to our directory. Stay ahead with cutting-edge AI technology just released.`,
+          keywords: 'latest AI tools, new AI tools, newest AI software, recent AI tools, new generative AI',
+          canonical: `${baseUrl}/tools/latest`,
           ogType: 'website'
         };
 
@@ -720,14 +779,24 @@ const App: React.FC = () => {
                 </Suspense>
               )}
 
-              {(currentView === AppView.HOME || currentView === AppView.CATEGORY) && (
+              {(currentView === AppView.HOME || currentView === AppView.CATEGORY || 
+                currentView === AppView.FREE_TOOLS || currentView === AppView.PAID_TOOLS || 
+                currentView === AppView.LATEST_TOOLS) && (
                 <div className="space-y-8 max-w-7xl mx-auto">
                   <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 border-b border-zinc-800 pb-8">
                     <div>
                       <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-2">
-                        AI Tool Directory
+                        {currentView === AppView.FREE_TOOLS ? '🆓 Free AI Tools' :
+                         currentView === AppView.PAID_TOOLS ? '💎 Premium AI Tools' :
+                         currentView === AppView.LATEST_TOOLS ? '🆕 Latest AI Tools' :
+                         'AI Tool Directory'}
                       </h1>
-                      <p className="text-zinc-400">Discover next-gen tools generated by Gemini.</p>
+                      <p className="text-zinc-400">
+                        {currentView === AppView.FREE_TOOLS ? 'Explore powerful AI tools that won\'t cost you a dime' :
+                         currentView === AppView.PAID_TOOLS ? 'Professional AI tools worth the investment' :
+                         currentView === AppView.LATEST_TOOLS ? 'Newest AI tools just added to our directory' :
+                         'Discover next-gen tools generated by Gemini.'}
+                      </p>
                     </div>
                   </div>
 

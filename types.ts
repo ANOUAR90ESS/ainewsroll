@@ -36,6 +36,9 @@ export interface UserProfile {
 
 export enum AppView {
   HOME = 'HOME',
+  FREE_TOOLS = 'FREE_TOOLS',
+  PAID_TOOLS = 'PAID_TOOLS',
+  LATEST_TOOLS = 'LATEST_TOOLS',
   SMART_CHAT = 'SMART_CHAT',
   LATEST_NEWS = 'LATEST_NEWS',
   ANALYTICS = 'ANALYTICS',
