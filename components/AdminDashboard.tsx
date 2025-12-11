@@ -512,16 +512,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
   const convertRssToTool = async (item: any) => {
-    setProcessingId(item.id);
+    const stripHtml = (html: string) => {
+      const tmp = document.createElement('DIV');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    };
+
+    setProcessingId(item.id ?? item.link ?? crypto.randomUUID());
     try {
         const extracted = await extractToolFromRSSItem(item.title, item.description);
 
-        // Generate AI image for the tool
-        const toolName = extracted.name || item.title;
-        const toolDescription = extracted.description || item.description;
+        const toolName = (extracted.name || item.title || 'RSS Tool').substring(0, 200);
+        const toolDescription = (extracted.description || stripHtml(item.description || '')).substring(0, 500);
         const toolCategory = extracted.category || 'News';
 
-        const aiImageUrl = await generateImageForTool(toolName, toolDescription, toolCategory);
+        let aiImageUrl: string | undefined;
+        try {
+          aiImageUrl = await generateImageForTool(toolName, toolDescription, toolCategory);
+        } catch (imgErr) {
+          console.warn('Image generation failed, using placeholder', imgErr);
+          aiImageUrl = `https://picsum.photos/seed/${encodeURIComponent(toolName)}/800/400`;
+        }
 
         setNewTool({
             name: toolName,
@@ -536,39 +547,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setLastSuccess(null);
     } catch (e) {
         console.error(e);
-        alert("Failed to extract tool info.");
+        const fallbackName = (item.title || 'RSS Tool').substring(0, 200);
+        setNewTool({
+          name: fallbackName,
+          description: stripHtml(item.description || '').substring(0, 500),
+          category: 'News',
+          price: 'Unknown',
+          tags: ['RSS'],
+          website: item.link || '#',
+          imageUrl: `https://picsum.photos/seed/${encodeURIComponent(fallbackName)}/800/400`
+        });
+        setActiveTab('create');
+        alert("No se pudo extraer con IA; cargamos el item RSS en el formulario.");
     } finally {
         setProcessingId(null);
     }
   };
 
   const convertRssToNews = async (item: any) => {
-    setProcessingId(item.id);
+    const stripHtml = (html: string) => {
+      const tmp = document.createElement('DIV');
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || '';
+    };
+
+    setProcessingId(item.id ?? item.link ?? crypto.randomUUID());
     try {
-        const extracted = await extractNewsFromRSSItem(item.title, item.description);
-        
-        // Strip HTML tags
-        const stripHtml = (html: string) => {
-          const tmp = document.createElement('DIV');
-          tmp.innerHTML = html;
-          return tmp.textContent || tmp.innerText || '';
-        };
-        
-        setNewNews({
-            title: (extracted.title || item.title).substring(0, 200),
-            description: stripHtml(extracted.description || item.description).substring(0, 300),
-            content: stripHtml(extracted.content || item.description).substring(0, 1000),
-            source: item.link || 'RSS Feed',
-            imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
-            category: 'Tech News'
-        });
-        setActiveTab('news');
-        setLastSuccess(null);
+      const extracted = await extractNewsFromRSSItem(item.title, item.description);
+      setNewNews({
+        title: (extracted.title || item.title || 'RSS News').substring(0, 200),
+        description: stripHtml(extracted.description || item.description).substring(0, 300),
+        content: stripHtml(extracted.content || item.description).substring(0, 1000),
+        source: item.link || 'RSS Feed',
+        imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
+        category: extracted.category || 'Tech News'
+      });
+      setActiveTab('news');
+      setLastSuccess(null);
     } catch (e) {
-        console.error(e);
-        alert("Failed to extract news info.");
+      console.error(e);
+      setNewNews({
+        title: (item.title || 'RSS News').substring(0, 200),
+        description: stripHtml(item.description || '').substring(0, 300),
+        content: stripHtml(item.description || '').substring(0, 1000),
+        source: item.link || 'RSS Feed',
+        imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
+        category: 'Tech News'
+      });
+      setActiveTab('news');
+      alert("No se pudo extraer con IA; cargamos el item RSS en el formulario.");
     } finally {
-        setProcessingId(null);
+      setProcessingId(null);
     }
   };
 
