@@ -804,35 +804,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     Publish All
                                 </button>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {reviewQueue.map((tool) => (
-                                    <div key={tool.id} className="bg-zinc-950 border border-zinc-800 p-4 rounded-lg flex flex-col gap-3">
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <h5 className="text-white font-bold">{tool.name}</h5>
-                                                <span className="text-[10px] uppercase bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">{tool.category}</span>
+                                    <div key={tool.id} className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden flex flex-col hover:border-zinc-700 transition-colors">
+                                        {/* Image Preview */}
+                                        <div className="relative h-40 bg-zinc-900 overflow-hidden group">
+                                            <img 
+                                                src={tool.imageUrl} 
+                                                alt={tool.name}
+                                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                onError={(e) => {
+                                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+                                                }}
+                                            />
+                                            <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-1 rounded text-[10px] uppercase text-zinc-300 font-semibold">
+                                                {tool.category}
                                             </div>
-                                            <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{tool.description}</p>
+                                            {tool.price && (
+                                                <div className="absolute bottom-2 left-2 bg-indigo-600/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-white font-medium">
+                                                    {tool.price}
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="flex gap-2 pt-2 border-t border-zinc-800">
-                                            <button 
-                                                onClick={() => handlePublishReviewTool(tool)}
-                                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded text-xs font-medium"
-                                            >
-                                                Publish
-                                            </button>
-                                            <button 
-                                                onClick={() => handleEditReviewTool(tool)}
-                                                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-medium"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button 
-                                                onClick={() => handleDiscardReviewTool(tool.id)}
-                                                className="flex-1 bg-zinc-800 hover:bg-red-900/50 text-zinc-400 hover:text-red-400 py-1.5 rounded text-xs font-medium"
-                                            >
-                                                Discard
-                                            </button>
+                                        
+                                        {/* Content */}
+                                        <div className="p-4 flex-1 flex flex-col">
+                                            <h5 className="text-white font-bold text-sm mb-2 line-clamp-1">{tool.name}</h5>
+                                            <p className="text-xs text-zinc-500 line-clamp-2 mb-3 flex-1">{tool.description}</p>
+                                            
+                                            {/* Tags */}
+                                            {tool.tags && tool.tags.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mb-3">
+                                                    {tool.tags.slice(0, 3).map((tag, idx) => (
+                                                        <span key={idx} className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded">
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                    {tool.tags.length > 3 && (
+                                                        <span className="text-[10px] text-zinc-600">+{tool.tags.length - 3}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
+                                            {/* Actions */}
+                                            <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                                                <button 
+                                                    onClick={() => handlePublishReviewTool(tool)}
+                                                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded text-xs font-medium transition-colors"
+                                                >
+                                                    Publish
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleEditReviewTool(tool)}
+                                                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded text-xs font-medium transition-colors"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleDiscardReviewTool(tool.id)}
+                                                    className="bg-zinc-800 hover:bg-red-900/50 text-zinc-400 hover:text-red-400 py-2 px-3 rounded text-xs font-medium transition-colors"
+                                                    title="Discard"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
