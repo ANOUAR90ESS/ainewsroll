@@ -76,7 +76,8 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
            
            {/* Source Link Button */}
            {isSourceUrl && (
-             <div className="mt-8 pt-6 border-t border-zinc-800">
+             <div className="mt-8 pt-6 border-t border-zinc-800 space-y-3">
+               <p className="text-xs text-zinc-500 uppercase tracking-widest">Source</p>
                <a 
                  href={article.source}
                  target="_blank"
@@ -84,8 +85,17 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
                  className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-all transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20"
                >
                  <ExternalLink className="w-4 h-4" />
-                 Read Full Article on {displaySource}
+                 Visit {displaySource}
                </a>
+               <p className="text-xs text-zinc-500 break-all">{article.source}</p>
+             </div>
+           )}
+           {!isSourceUrl && article.source && (
+             <div className="mt-8 pt-6 border-t border-zinc-800">
+               <p className="text-sm text-zinc-400">
+                 <span className="text-xs uppercase tracking-widest text-zinc-500">Source: </span>
+                 {article.source}
+               </p>
              </div>
            )}
         </div>
