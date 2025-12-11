@@ -72,13 +72,23 @@ const generateToolImageUrl = (toolName: string, category: string): string => {
 const mapToolFromDB = (data: any): Tool => ({
   ...data,
   imageUrl: data.image_url || data.imageUrl || '',
+  how_to_use: data.how_to_use || '',
+  features_detailed: data.features_detailed || '',
+  use_cases: data.use_cases || '',
+  pros_cons: data.pros_cons || '',
+  screenshots_urls: data.screenshots_urls || []
 });
 
 const mapToolToDB = (tool: Partial<Tool>) => {
-  const { imageUrl, ...rest } = tool;
+  const { imageUrl, how_to_use, features_detailed, use_cases, pros_cons, screenshots_urls, ...rest } = tool;
   return {
     ...rest,
     image_url: imageUrl,
+    how_to_use: how_to_use || null,
+    features_detailed: features_detailed || null,
+    use_cases: use_cases || null,
+    pros_cons: pros_cons || null,
+    screenshots_urls: screenshots_urls || []
   };
 };
 
