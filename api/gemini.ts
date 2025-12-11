@@ -218,7 +218,12 @@ Return JSON array of slides.`;
       }
 
       case 'generateDirectoryTools': {
-        const prompt = `Generate 9 diverse AI tools across categories. Return JSON array.`;
+        const { count = 9, category } = payload;
+        
+        const categoryFilter = category ? ` focused on the ${category} category` : ' across diverse categories (Writing, Image, Video, Audio, Coding, Business, Data Analysis, Healthcare, Education)';
+        
+        const prompt = `Generate ${count} unique and diverse AI tools${categoryFilter}. Each tool must be COMPLETELY DIFFERENT with distinct names, purposes, and descriptions. Return JSON array with ${count} tools.`;
+        
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
           contents: prompt,

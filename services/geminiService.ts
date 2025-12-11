@@ -38,8 +38,8 @@ const callGeminiAPI = async (action: string, payload: any) => {
 };
 
 // --- Directory Generation ---
-export const generateDirectoryTools = async (category?: string): Promise<Tool[]> => {
-  const data = await callGeminiAPI('generateDirectoryTools', { category });
+export const generateDirectoryTools = async (count: number = 9, category?: string): Promise<Tool[]> => {
+  const data = await callGeminiAPI('generateDirectoryTools', { count, category });
   const tools = data.tools || [];
 
   console.log(`🎨 Generating AI images for ${tools.length} tools...`);

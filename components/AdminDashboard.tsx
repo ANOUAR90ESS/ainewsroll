@@ -49,6 +49,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Generation & Review State
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
   const [reviewQueue, setReviewQueue] = useState<Tool[]>([]);
+  const [batchCount, setBatchCount] = useState(9);
+  const [batchCategory, setBatchCategory] = useState<string>('All Categories');
 
   // RSS State
   const [rssUrl, setRssUrl] = useState('https://feeds.feedburner.com/TechCrunch/');
@@ -129,8 +131,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleGenerateCandidates = async () => {
     setIsGeneratingBatch(true);
     try {
-        console.log('🚀 Starting batch generation of AI tools with images...');
-        const generatedTools = await generateDirectoryTools();
+        console.log(`🚀 Starting batch generation of ${batchCount} AI tools${batchCategory !== 'All Categories' ? ` in ${batchCategory} category` : ''} with images...`);
+        const categoryParam = batchCategory === 'All Categories' ? undefined : batchCategory;
+        const generatedTools = await generateDirectoryTools(batchCount, categoryParam);
         console.log(`✅ Successfully generated ${generatedTools.length} tools with AI images`);
         setReviewQueue(prev => [...generatedTools, ...prev]);
         setLastSuccess(null);
@@ -711,24 +714,79 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Auto Generate & Review Section */}
             {!editingId && (
                 <div className="space-y-4">
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h3 className="text-lg font-medium text-white flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-indigo-400" />
-                                Auto-Generate Candidates
-                            </h3>
-                            <p className="text-sm text-zinc-400 mt-1">
-                                Generate 9 fictional AI tools with Gemini 2.5 Flash + AI-generated images with Imagen 3, then review before publishing.
-                            </p>
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+                        <div className="flex items-start justify-between gap-4 mb-4">
+                            <div>
+                                <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5 text-indigo-400" />
+                                    Auto-Generate Candidates
+                                </h3>
+                                <p className="text-sm text-zinc-400 mt-1">
+                                    Generate fictional AI tools with Gemini 2.5 Flash + AI-generated images with Imagen 3
+                                </p>
+                            </div>
                         </div>
-                        <button
-                            onClick={handleGenerateCandidates}
-                            disabled={isGeneratingBatch}
-                            className="shrink-0 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-2.5 px-6 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50"
-                        >
-                            {isGeneratingBatch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            <span>{isGeneratingBatch ? 'Generating Tools & AI Images...' : 'Generate Candidates'}</span>
-                        </button>
+
+                        {/* Generation Controls */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-2">Number of Tools</label>
+                                <select 
+                                    value={batchCount} 
+                                    onChange={(e) => setBatchCount(Number(e.target.value))}
+                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
+                                    disabled={isGeneratingBatch}
+                                >
+                                    <option value={3}>3 tools</option>
+                                    <option value={5}>5 tools</option>
+                                    <option value={9}>9 tools</option>
+                                    <option value={12}>12 tools</option>
+                                    <option value={15}>15 tools</option>
+                                    <option value={20}>20 tools</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm text-zinc-400 mb-2">Category Filter</label>
+                                <select 
+                                    value={batchCategory} 
+                                    onChange={(e) => setBatchCategory(e.target.value)}
+                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
+                                    disabled={isGeneratingBatch}
+                                >
+                                    <option value="All Categories">All Categories</option>
+                                    <option value="Writing">Writing</option>
+                                    <option value="Image">Image</option>
+                                    <option value="Video">Video</option>
+                                    <option value="Audio">Audio</option>
+                                    <option value="Coding">Coding</option>
+                                    <option value="Business">Business</option>
+                                    <option value="Data Analysis">Data Analysis</option>
+                                    <option value="Healthcare">Healthcare</option>
+                                    <option value="Education">Education</option>
+                                </select>
+                            </div>
+
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handleGenerateCandidates}
+                                    disabled={isGeneratingBatch}
+                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                >
+                                    {isGeneratingBatch ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    <span>{isGeneratingBatch ? 'Generating...' : 'Generate'}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {isGeneratingBatch && (
+                            <div className="bg-indigo-950/20 border border-indigo-900/50 rounded-lg p-3 flex items-center gap-3">
+                                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                                <div className="text-sm text-indigo-200">
+                                    Generating {batchCount} {batchCategory !== 'All Categories' ? batchCategory : ''} tools with unique AI images... This may take a few moments.
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Review Queue */}
