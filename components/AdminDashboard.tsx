@@ -546,12 +546,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setProcessingId(item.id);
     try {
         const extracted = await extractNewsFromRSSItem(item.title, item.description);
+        
+        // Strip HTML tags
+        const stripHtml = (html: string) => {
+          const tmp = document.createElement('DIV');
+          tmp.innerHTML = html;
+          return tmp.textContent || tmp.innerText || '';
+        };
+        
         setNewNews({
-            title: extracted.title || item.title,
-            description: extracted.description || item.description,
-            content: extracted.content || item.description, 
-        source: item.link || 'RSS Feed',
-            imageUrl: `https://picsum.photos/seed/${(extracted.title || item.title).replace(/\s/g,'')}/800/400`,
+            title: (extracted.title || item.title).substring(0, 200),
+            description: stripHtml(extracted.description || item.description).substring(0, 300),
+            content: stripHtml(extracted.content || item.description).substring(0, 1000),
+            source: item.link || 'RSS Feed',
+            imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
             category: 'Tech News'
         });
         setActiveTab('news');
@@ -568,21 +576,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setProcessingId(item.id);
     try {
       const extracted = await extractNewsFromRSSItem(item.title, item.description);
+      
+      // Strip HTML tags from description and content
+      const stripHtml = (html: string) => {
+        const tmp = document.createElement('DIV');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+      };
+      
+      const cleanDescription = stripHtml(extracted.description || item.description).substring(0, 300).trim();
+      const cleanContent = stripHtml(extracted.content || item.description).substring(0, 1000).trim();
+      const title = (extracted.title || item.title).substring(0, 200).trim();
+      
+      // Generate AI image for the article
+      const newsImageUrl = await generateImage(
+        `Create a professional editorial illustration for a news article. Title: "${title}". Description: ${cleanDescription}. Style: modern, professional, news illustration.`,
+        "16:9",
+        "1K"
+      );
+      
       const article: NewsArticle = {
         id: crypto.randomUUID(),
-        title: extracted.title || item.title,
-        description: extracted.description || item.description,
-        content: extracted.content || item.description,
+        title,
+        description: cleanDescription || 'Breaking news article from RSS feed.',
+        content: cleanContent,
         source: item.link || 'RSS Feed',
-        imageUrl: `https://picsum.photos/seed/${(extracted.title || item.title).replace(/\s/g,'')}/800/400`,
+        imageUrl: newsImageUrl || `https://picsum.photos/800/400?random=${Date.now()}`,
         category: extracted.category || 'Tech News',
         date: new Date().toISOString()
       };
+      
+      console.log('Publishing news from RSS:', article);
       await onAddNews(article);
       setLastSuccess({ type: 'news', data: article });
     } catch (e) {
-      console.error(e);
-      alert("Failed to publish news from RSS.");
+      console.error('Error publishing RSS as news:', e);
+      alert("Failed to publish news from RSS. Check console for details.");
     } finally {
       setProcessingId(null);
     }

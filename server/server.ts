@@ -8,13 +8,11 @@ import zlib from 'zlib';
 
 dotenv.config();
 
+// Validate critical env vars but do NOT crash the serverless function; return 500s instead.
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are missing in .env');
-  process.exit(1);
-}
+const missingEnvError = () => !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY;
 
 // ========================
 // Simple In-Memory Cache
@@ -54,18 +52,19 @@ class Cache {
 
 const cache = new Cache(600); // 10 minutes TTL
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are missing in .env');
-  process.exit(1);
+if (missingEnvError()) {
+  console.error('Error: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are missing. Server will respond 500 to protected routes.');
 }
 
 // Client with SERVICE ROLE - ONLY for backend use
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-});
+const supabaseAdmin = (!missingEnvError())
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+  : null;
 
 const app = express();
 app.use(cors());
@@ -81,6 +80,10 @@ interface AuthenticatedRequest extends Request {
  * Middleware: Extracts Bearer token and validates with Supabase
  */
 const requireAuth = (async (req: Request, res: Response, next: NextFunction) => {
+  if (missingEnvError() || !supabaseAdmin) {
+    res.status(500).json({ error: 'Server configuration missing Supabase credentials' });
+    return;
+  }
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -166,6 +169,9 @@ app.post('/api/books', requireAuth, (async (req: Request, res: Response) => {
  */
 async function generateRobots(): Promise<string> {
   try {
+    if (missingEnvError() || !supabaseAdmin) {
+      throw new Error('Supabase credentials are missing');
+    }
     const { data: tools } = await supabaseAdmin
       .from('tools')
       .select('id')
@@ -226,6 +232,9 @@ async function fetchAllRows<T>(table: string, columns: string, chunkSize = 500):
   const rows: T[] = [];
   let from = 0;
   while (true) {
+    if (missingEnvError() || !supabaseAdmin) {
+      throw new Error('Supabase credentials are missing');
+    }
     const { data, error } = await supabaseAdmin
       .from(table)
       .select(columns)
@@ -246,6 +255,9 @@ async function fetchAllRows<T>(table: string, columns: string, chunkSize = 500):
  */
 async function generateSitemap(): Promise<string> {
   try {
+    if (missingEnvError() || !supabaseAdmin) {
+      throw new Error('Supabase credentials are missing');
+    }
     const baseUrl = 'https://ainewsroll.space';
 
     const tools = await fetchAllRows<any>('tools', 'id, name, updated_at, image_url, category');
@@ -347,7 +359,7 @@ async function generateSitemap(): Promise<string> {
     return sitemap;
   } catch (err) {
     console.error('Error generating sitemap:', err);
-    return '';
+    throw err;
   }
 }
 
@@ -360,6 +372,10 @@ app.get('/api/seo', (async (req: Request, res: Response) => {
     const useGzip = gzipQuery === '1';
 
     if (sitemapQuery === '1') {
+      if (missingEnvError()) {
+        res.status(500).json({ error: 'Server missing Supabase configuration for sitemap' });
+        return;
+      }
       // Sitemap
       let sitemapContent = cache.get('sitemap-xml');
       if (!sitemapContent) {
@@ -380,6 +396,10 @@ app.get('/api/seo', (async (req: Request, res: Response) => {
       res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
       return res.send(buffer);
     } else {
+      if (missingEnvError()) {
+        res.status(500).json({ error: 'Server missing Supabase configuration for robots' });
+        return;
+      }
       // Robots.txt
       let robotsContent = cache.get('robots-txt');
       if (!robotsContent) {
