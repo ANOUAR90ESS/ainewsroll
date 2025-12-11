@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic } from '../services/geminiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/geminiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';
@@ -50,6 +50,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // AI Topic Generation State
   const [topicInput, setTopicInput] = useState('');
   const [generatingFromTopic, setGeneratingFromTopic] = useState(false);
+  const [newsTopicInput, setNewsTopicInput] = useState('');
+  const [generatingNewsFromTopic, setGeneratingNewsFromTopic] = useState(false);
   
   // Generation & Review State
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -219,6 +221,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       alert(`Failed to generate tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setGeneratingFromTopic(false);
+    }
+  };
+
+  const handleGenerateNewsFromTopic = async () => {
+    if (!newsTopicInput.trim()) {
+      alert('Please enter a news topic');
+      return;
+    }
+
+    setGeneratingNewsFromTopic(true);
+    try {
+      const article = await generateNewsFromTopic(newsTopicInput.trim());
+      setNewNews({
+        ...newNews,
+        ...article,
+        imageUrl: article.imageUrl || newNews.imageUrl,
+        source: article.source || 'Google News'
+      });
+      setActiveTab('news');
+      setLastSuccess(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setNewsTopicInput('');
+    } catch (error) {
+      console.error('Failed to generate news from topic:', error);
+      alert(`Failed to generate news: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setGeneratingNewsFromTopic(false);
     }
   };
 
@@ -1371,6 +1400,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          <ArrowLeft className="w-4 h-4" /> Cancel Edit
                      </button>
                  )}
+             </div>
+
+             <div className="bg-gradient-to-br from-purple-950/50 to-indigo-950/30 border border-purple-800/50 rounded-xl p-5 mb-5">
+               <div className="flex items-center gap-3 mb-3">
+                 <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                   <Sparkles className="w-5 h-5 text-white" />
+                 </div>
+                 <div>
+                   <h4 className="text-white font-semibold">AI News Generator</h4>
+                   <p className="text-xs text-zinc-400">Enter a topic and we’ll draft an article using Google News context.</p>
+                 </div>
+               </div>
+               <div className="flex gap-3 flex-col md:flex-row">
+                 <input
+                   value={newsTopicInput}
+                   onChange={e => setNewsTopicInput(e.target.value)}
+                   onKeyDown={e => e.key === 'Enter' && !generatingNewsFromTopic && handleGenerateNewsFromTopic()}
+                   placeholder="e.g., OpenAI updates, Gemini 2.5, AI chips"
+                   className="flex-1 bg-zinc-950/80 border border-purple-800/50 rounded-lg p-3.5 text-white placeholder-zinc-500 focus:border-purple-500 outline-none"
+                   disabled={generatingNewsFromTopic}
+                 />
+                 <button
+                   onClick={handleGenerateNewsFromTopic}
+                   disabled={generatingNewsFromTopic || !newsTopicInput.trim()}
+                   className="px-6 py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white rounded-lg font-semibold flex items-center gap-2 transition-all"
+                 >
+                   {generatingNewsFromTopic ? (
+                     <>
+                       <Loader2 className="w-5 h-5 animate-spin" />
+                       Generating...
+                     </>
+                   ) : (
+                     <>
+                       <Wand2 className="w-5 h-5" />
+                       Generate
+                     </>
+                   )}
+                 </button>
+               </div>
+               <div className="mt-2 text-[11px] text-purple-200 flex items-start gap-2">
+                 <ShieldAlert className="w-4 h-4 mt-0.5 text-purple-400" />
+                 <span>Uses Google News headlines for context, then drafts a fresh article. Review before publishing.</span>
+               </div>
              </div>
 
              <form onSubmit={handleNewsSubmit} className="space-y-4">

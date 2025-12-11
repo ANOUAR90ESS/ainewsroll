@@ -340,6 +340,11 @@ export const extractNewsFromRSSItem = async (title: string, description: string)
   return data.article || {};
 };
 
+export const generateNewsFromTopic = async (topic: string): Promise<NewsArticle> => {
+  const data = await callGeminiAPI('generateNewsFromTopic', { topic });
+  return data.article || {} as NewsArticle;
+};
+
 export const generateToolSlides = async (tool: Tool): Promise<Slide[]> => {
   const data = await callGeminiAPI('generateToolSlides', { tool });
   return data.slides || [];

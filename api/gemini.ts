@@ -303,6 +303,71 @@ Return a JSON object with: title, description, content`;
         return res.json({ article: JSON.parse(response.text || "{}") });
       }
 
+      case 'generateNewsFromTopic': {
+        const { topic } = payload;
+
+        // Fetch top Google News RSS items for context
+        let contextItems: Array<{ title: string; link: string; description: string }> = [];
+        try {
+          const query = encodeURIComponent(topic);
+          const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
+          const rssResponse = await fetch(rssUrl);
+          const xml = await rssResponse.text();
+
+          const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+          let match;
+          while ((match = itemRegex.exec(xml)) && contextItems.length < 5) {
+            const itemXml = match[1];
+            const titleMatch = itemXml.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+            const linkMatch = itemXml.match(/<link>(.*?)<\/link>/);
+            const descMatch = itemXml.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/);
+
+            contextItems.push({
+              title: titleMatch?.[1] || 'Untitled',
+              link: linkMatch?.[1] || '',
+              description: (descMatch?.[1] || '').replace(/<[^>]+>/g, '').trim()
+            });
+          }
+        } catch (err) {
+          console.warn('Google News fetch failed, continuing without context', err);
+        }
+
+        const headlines = contextItems.map((i, idx) => `${idx + 1}. ${i.title} — ${i.description}`).join("\n");
+
+        const prompt = `You are a concise tech news editor. Using the context below, craft a fresh article about the topic: "${topic}".
+Context headlines:\n${headlines || 'No external context available, rely on general knowledge about the topic.'}
+
+Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), content (3-5 short paragraphs, Markdown OK), source (string), category (string).`;
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                content: { type: Type.STRING },
+                source: { type: Type.STRING },
+                category: { type: Type.STRING }
+              }
+            }
+          }
+        });
+
+        const article = JSON.parse(response.text || "{}");
+        return res.json({
+          article: {
+            ...article,
+            imageUrl: `https://source.unsplash.com/1200x630/?${encodeURIComponent(topic + ' technology news')}`,
+            source: article.source || 'Google News',
+            category: article.category || 'AI News'
+          }
+        });
+      }
+
       case 'editImage': {
         const { prompt } = payload;
 
