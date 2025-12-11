@@ -16,6 +16,7 @@ declare global {
 
 export const initializeGA4 = () => {
   if (typeof window === 'undefined') return;
+  if (window.gtag) return; // Prevent duplicate initialization
 
   // Add GA4 script
   const script = document.createElement('script');
@@ -73,6 +74,51 @@ export const trackToolInteraction = (toolName: string, toolCategory: string) => 
 };
 
 /**
+ * Track which categories attract clicks/visits
+ */
+export const trackCategoryView = (category: string, toolCount?: number) => {
+  trackEvent('category_view', {
+    category,
+    tool_count: toolCount,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Track when a user opens a tool detail/insight view
+ */
+export const trackToolDetailView = (toolName: string, toolCategory: string) => {
+  trackEvent('tool_detail_view', {
+    tool_name: toolName,
+    tool_category: toolCategory,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Track outbound clicks to tool websites
+ */
+export const trackToolVisit = (toolName: string, toolCategory: string, url?: string) => {
+  trackEvent('tool_visit', {
+    tool_name: toolName,
+    tool_category: toolCategory,
+    url,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Track favorite conversions (adds only)
+ */
+export const trackFavoriteConversion = (toolName: string, toolCategory: string) => {
+  trackEvent('favorite_add', {
+    tool_name: toolName,
+    tool_category: toolCategory,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
  * Track search event
  */
 export const trackSearch = (searchQuery: string, resultsCount: number) => {
@@ -116,6 +162,10 @@ export default {
   trackEvent,
   trackPageView,
   trackToolInteraction,
+  trackCategoryView,
+  trackToolDetailView,
+  trackToolVisit,
+  trackFavoriteConversion,
   trackSearch,
   trackNewsClick,
   trackChatMessage,

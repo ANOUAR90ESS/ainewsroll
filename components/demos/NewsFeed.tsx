@@ -3,6 +3,7 @@ import { NewsArticle } from '../../types';
 import { Calendar, ExternalLink, Newspaper, Tag } from 'lucide-react';
 import NewsModal from '../NewsModal';
 import AdUnit from '../AdUnit';
+import { trackNewsClick } from '../../services/analyticsService';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
@@ -10,6 +11,11 @@ interface NewsFeedProps {
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+
+  const openArticle = (article: NewsArticle) => {
+    setSelectedArticle(article);
+    trackNewsClick(article.title, article.source);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
@@ -33,7 +39,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {articles.slice(0, 3).map((article) => (
               <div key={article.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
-                <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => setSelectedArticle(article)}>
+                <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                   <img 
                     src={article.imageUrl} 
                     alt={article.title}
@@ -56,7 +62,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                 <div className="p-5 flex flex-col flex-1">
                   <h3 
                     className="text-xl font-bold text-white mb-3 line-clamp-2 group-hover:text-purple-400 transition-colors cursor-pointer"
-                    onClick={() => setSelectedArticle(article)}
+                    onClick={() => openArticle(article)}
                   >
                     {article.title}
                   </h3>
@@ -68,7 +74,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                      <div className="flex justify-between items-center mt-2">
                        <span className="text-xs font-semibold text-zinc-500 uppercase truncate max-w-[50%]">{article.source}</span>
                        <button 
-                         onClick={() => setSelectedArticle(article)}
+                         onClick={() => openArticle(article)}
                          className="text-purple-400 text-sm font-medium flex items-center gap-1 hover:text-purple-300 transition-colors bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1.5 rounded-full"
                        >
                          Read More <ExternalLink className="w-3 h-3" />
@@ -93,7 +99,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
               {articles.slice(3).map((article, idx) => (
                 <React.Fragment key={article.id}>
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
-                    <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => setSelectedArticle(article)}>
+                    <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                       <img 
                         src={article.imageUrl} 
                         alt={article.title}
@@ -116,7 +122,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                     <div className="p-5 flex flex-col flex-1">
                       <h3 
                         className="text-xl font-bold text-white mb-3 line-clamp-2 group-hover:text-purple-400 transition-colors cursor-pointer"
-                        onClick={() => setSelectedArticle(article)}
+                        onClick={() => openArticle(article)}
                       >
                         {article.title}
                       </h3>
@@ -128,7 +134,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                          <div className="flex justify-between items-center mt-2">
                            <span className="text-xs font-semibold text-zinc-500 uppercase truncate max-w-[50%]">{article.source}</span>
                            <button 
-                             onClick={() => setSelectedArticle(article)}
+                             onClick={() => openArticle(article)}
                              className="text-purple-400 text-sm font-medium flex items-center gap-1 hover:text-purple-300 transition-colors bg-purple-500/10 hover:bg-purple-500/20 px-3 py-1.5 rounded-full"
                            >
                              Read More <ExternalLink className="w-3 h-3" />

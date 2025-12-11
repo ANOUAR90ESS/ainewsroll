@@ -1,7 +1,9 @@
 import React, { useState, memo } from 'react';
+import { Link } from 'react-router-dom';
 import { ExternalLink, Tag, Sparkles, Heart } from 'lucide-react';
 import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
+import { trackToolDetailView, trackToolVisit } from '../services/analyticsService';
 
 interface ToolCardProps {
   tool: Tool;
@@ -97,6 +99,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
              onClick={(e) => {
                e.preventDefault();
                setShowModal(true);
+               trackToolDetailView(tool.name, tool.category);
              }}
              className="absolute bottom-3 left-3 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0"
              title="AI Explain"
@@ -112,6 +115,16 @@ const ToolCard: React.FC<ToolCardProps> = ({
           
           <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-300 transition-colors">{tool.name}</h3>
           <p className="text-zinc-400 text-sm mb-4 line-clamp-2 flex-1">{tool.description}</p>
+
+          <div className="flex justify-between items-center mb-3">
+            <Link 
+              to={`/tool/${tool.id}`} 
+              onClick={() => trackToolDetailView(tool.name, tool.category)}
+              className="text-xs text-indigo-300 hover:text-indigo-100 font-semibold"
+            >
+              View details
+            </Link>
+          </div>
           
           <div className="flex flex-wrap gap-2 mb-4">
             {tool.tags.slice(0, 3).map(tag => (
@@ -125,6 +138,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
             href={tool.website} 
             target="_blank" 
             rel="noopener noreferrer"
+            onClick={() => trackToolVisit(tool.name, tool.category, tool.website)}
             className="mt-auto flex items-center justify-center gap-2 w-full bg-zinc-800 hover:bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Visit Website <ExternalLink className="w-3 h-3" />

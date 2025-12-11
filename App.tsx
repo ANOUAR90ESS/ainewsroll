@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import Sidebar from './components/Sidebar';
@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import AdUnit from './components/AdUnit';
 import SEO from './components/SEO';
+import { useGA4, trackPageView, trackCategoryView, trackToolVisit, trackToolDetailView, trackFavoriteConversion } from './services/analyticsService';
 
 // Lazy load heavy components
 const LiveDemo = lazy(() => import('./components/demos/LiveDemo'));
@@ -17,6 +18,7 @@ const GenericPage = lazy(() => import('./components/GenericPage'));
 const PaymentPage = lazy(() => import('./components/PaymentPage'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
 const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
+const ToolDetail = lazy(() => import('./components/ToolDetail'));
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/geminiService';
 import {
@@ -49,11 +51,14 @@ const LoadingFallback = () => (
 const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  useGA4();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPageId, setCurrentPageId] = useState<string>('');
 
   // Map URL path to AppView
   const pathToView = (pathname: string): AppView => {
+    if (pathname.startsWith('/tool/')) return AppView.TOOL_DETAIL;
+    if (pathname.startsWith('/category/')) return AppView.CATEGORY;
     if (pathname === '/' || pathname === '/directory') return AppView.HOME;
     if (pathname === '/chat') return AppView.SMART_CHAT;
     if (pathname === '/news') return AppView.LATEST_NEWS;
@@ -102,6 +107,8 @@ const App: React.FC = () => {
       [AppView.PAGES]: 'Page | AI News-Roll',
       [AppView.PAYMENT]: 'Payment | AI News-Roll',
       [AppView.FAVORITES]: 'My Favorites | AI News-Roll',
+      [AppView.CATEGORY]: 'Category | AI News-Roll',
+      [AppView.TOOL_DETAIL]: 'Tool Detail | AI News-Roll'
     };
 
     document.title = titleMap[currentView] || 'AI News-Roll';
@@ -242,11 +249,25 @@ const App: React.FC = () => {
         await removeFavorite(user.id, toolId);
       } else {
         await addFavorite(user.id, toolId);
+        const tool = tools.find((t) => t.id === toolId);
+        if (tool) {
+          trackFavoriteConversion(tool.name, tool.category);
+        }
       }
     } catch (e: any) {
       console.error("Error toggling favorite:", e);
       alert(`Failed to ${favoriteIds.includes(toolId) ? 'remove' : 'add'} favorite: ${e.message}`);
     }
+  };
+
+  const handleCategorySelect = (cat: string) => {
+    setCategoryFilter(cat);
+    if (cat === 'All') {
+      navigate('/');
+    } else {
+      navigate(`/category/${slugifyCategory(cat)}`);
+    }
+    trackCategoryView(cat, categoryCounts[cat] || 0);
   };
 
   const handleNavigation = (view: AppView, pageId?: string) => {
@@ -269,7 +290,9 @@ const App: React.FC = () => {
         [AppView.ADMIN]: '/admin',
         [AppView.PAYMENT]: '/payment',
         [AppView.FAVORITES]: '/favorites',
-        [AppView.PAGES]: pageId ? `/page/${pageId}` : '/pages'
+        [AppView.PAGES]: pageId ? `/page/${pageId}` : '/pages',
+        [AppView.CATEGORY]: '/',
+        [AppView.TOOL_DETAIL]: '/'
       };
 
       navigate(viewToPath[view]);
@@ -408,7 +431,35 @@ const App: React.FC = () => {
 
   const hasMore = visibleCount < filteredTools.length;
 
-  const categories = ['All', 'Writing', 'Image', 'Video', 'Audio', 'Coding', 'Business', 'Data Analysis', 'Education', 'Healthcare', 'Design'];
+  const categories = useMemo(() => ['All', 'Writing', 'Image', 'Video', 'Audio', 'Coding', 'Business', 'Data Analysis', 'Education', 'Healthcare', 'Design'], []);
+
+  const slugifyCategory = (cat: string) => cat.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const unslugCategory = useCallback((slug: string) => categories.find(cat => slugifyCategory(cat) === slug) || '', [categories]);
+
+  const toolIdFromPath = useMemo(() => {
+    const match = location.pathname.match(/^\/tool\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
+
+  const categorySlugFromPath = useMemo(() => {
+    const match = location.pathname.match(/^\/category\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
+
+  const selectedTool = useMemo(() => {
+    if (!toolIdFromPath) return null;
+    return tools.find((t: Tool) => t.id === toolIdFromPath) || null;
+  }, [toolIdFromPath, tools]);
+
+  const categoryCounts = useMemo(() => {
+    return tools.reduce((acc, tool) => {
+      if (tool?.category) {
+        acc[tool.category] = (acc[tool.category] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }, [tools]);
+
   const showCollections = searchTerm === '' && categoryFilter === 'All';
 
   // SEO metadata based on current view
@@ -416,6 +467,24 @@ const App: React.FC = () => {
     const baseUrl = 'https://ainewsroll.space';
 
     switch (currentView) {
+      case AppView.TOOL_DETAIL:
+        return {
+          title: selectedTool ? `${selectedTool.name} | AI Tool Profile | AI News-Roll` : 'AI Tool Profile | AI News-Roll',
+          description: selectedTool ? selectedTool.description : 'Explore full details about this AI tool in the AI News-Roll directory.',
+          keywords: selectedTool ? `${selectedTool.name}, ${selectedTool.category} AI tool, AI software` : 'AI tool profile, AI News-Roll',
+          canonical: `${baseUrl}${location.pathname}`,
+          ogType: 'article',
+          ogImage: selectedTool?.imageUrl || undefined
+        };
+
+      case AppView.CATEGORY:
+        return {
+          title: `${categoryFilter} AI Tools | ${categoryCounts[categoryFilter] || 0} listings | AI News-Roll`,
+          description: `Browse ${categoryCounts[categoryFilter] || 0} vetted ${categoryFilter} AI tools with screenshots, pricing, and key features. Updated daily on AI News-Roll.`,
+          keywords: `${categoryFilter} AI tools, ${categoryFilter.toLowerCase()} software, AI News-Roll directory`,
+          canonical: `${baseUrl}/category/${slugifyCategory(categoryFilter)}`,
+          ogType: 'website'
+        };
       case AppView.HOME:
         return {
           title: 'AI Tool Directory | Discover 50+ AI-Powered Tools | AI News-Roll',
@@ -461,7 +530,17 @@ const App: React.FC = () => {
           ogType: 'website'
         };
     }
-  }, [currentView, tools.length, news.length, favoriteIds.length, categories.length]);
+  }, [currentView, tools.length, news.length, favoriteIds.length, categories.length, selectedTool?.id, selectedTool?.imageUrl, categoryFilter, categoryCounts[categoryFilter], location.pathname]);
+
+  useEffect(() => {
+    trackPageView(seoProps.title, location.pathname);
+  }, [location.pathname, seoProps.title]);
+
+  useEffect(() => {
+    if (currentView === AppView.TOOL_DETAIL && selectedTool) {
+      trackToolDetailView(selectedTool.name, selectedTool.category);
+    }
+  }, [currentView, selectedTool]);
 
   // Infinite Scroll Effect
   useEffect(() => {
@@ -491,6 +570,21 @@ const App: React.FC = () => {
   useEffect(() => {
     setVisibleCount(12);
   }, [searchTerm, categoryFilter]);
+
+  // Sync category from URL and track popularity
+  useEffect(() => {
+    if (categorySlugFromPath) {
+      const catName = unslugCategory(categorySlugFromPath);
+      if (catName && catName !== categoryFilter) {
+        setCategoryFilter(catName);
+        trackCategoryView(catName, categoryCounts[catName] || 0);
+      } else if (!catName) {
+        setCategoryFilter('All');
+      }
+    } else if (location.pathname === '/' && categoryFilter !== 'All') {
+      setCategoryFilter('All');
+    }
+  }, [categorySlugFromPath, categoryFilter, location.pathname, categoryCounts, unslugCategory]);
 
   const CollectionSection = ({ title, icon: Icon, items, colorClass }: { title: string, icon: any, items: Tool[], colorClass: string }) => {
     if (items.length === 0) return null;
@@ -612,7 +706,21 @@ const App: React.FC = () => {
             )}
             
             <div className="flex-1">
-              {currentView === AppView.HOME && (
+              {currentView === AppView.TOOL_DETAIL && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <ToolDetail 
+                    tool={selectedTool}
+                    onBack={() => navigate('/')}
+                    onVisitWebsite={(url) => {
+                      if (selectedTool) {
+                        trackToolVisit(selectedTool.name, selectedTool.category, url);
+                      }
+                    }}
+                  />
+                </Suspense>
+              )}
+
+              {(currentView === AppView.HOME || currentView === AppView.CATEGORY) && (
                 <div className="space-y-8 max-w-7xl mx-auto">
                   <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 border-b border-zinc-800 pb-8">
                     <div>
@@ -630,7 +738,7 @@ const App: React.FC = () => {
                         <button
                           type="button"
                           key={cat}
-                          onClick={() => setCategoryFilter(cat)}
+                          onClick={() => handleCategorySelect(cat)}
                           className={`px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                             categoryFilter === cat
                               ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50'

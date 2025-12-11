@@ -44,6 +44,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
   const [tagInput, setTagInput] = useState('');
   const [toolImageMode, setToolImageMode] = useState<'url' | 'upload' | 'generate'>('url');
+  const [toolImagePrompt, setToolImagePrompt] = useState('');
   const [generatingToolImg, setGeneratingToolImg] = useState(false);
   
   // Generation & Review State
@@ -69,6 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     category: 'Technology'
   });
   const [newsImageMode, setNewsImageMode] = useState<'url' | 'upload' | 'generate'>('url');
+  const [newsImagePrompt, setNewsImagePrompt] = useState('');
   const [generatingImg, setGeneratingImg] = useState(false);
   const [newsCategories, setNewsCategories] = useState(['Technology', 'Business', 'Innovation', 'Startup', 'Research', 'AI Model']);
   const [newCategoryInput, setNewCategoryInput] = useState('');
@@ -103,17 +105,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // --- Handlers ---
 
-  const resetToolForm = () => {
+    const resetToolForm = () => {
       setNewTool({ name: '', description: '', category: 'Writing', price: 'Freemium', website: 'https://', tags: [] });
       setToolImageMode('url');
+      setToolImagePrompt('');
       setEditingId(null);
-  };
+    };
 
-  const resetNewsForm = () => {
+    const resetNewsForm = () => {
       setNewNews({ title: '', description: '', content: '', source: '', imageUrl: '', category: 'Technology' });
       setNewsImageMode('url');
+      setNewsImagePrompt('');
       setEditingId(null);
-  };
+    };
 
   const startEditingTool = (tool: Tool) => {
       setNewTool(tool);
@@ -290,7 +294,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingImg(true);
     try {
-        const prompt = `Create a professional editorial illustration for a news article. Title: "${newNews.title}". Category: ${newNews.category}. Description: ${newNews.description || 'Not provided'}. Full content: ${newNews.content || 'Not provided'}. Source: ${newNews.source || 'Unknown'}. The image should visually represent the main themes and topics discussed in this article. High quality, modern, professional news illustration style.`;
+      const prompt = newsImagePrompt?.trim()
+        ? newsImagePrompt
+        : `Create a professional editorial illustration for a news article. Title: "${newNews.title}". Category: ${newNews.category}. Description: ${newNews.description || 'Not provided'}. Full content: ${newNews.content || 'Not provided'}. Source: ${newNews.source || 'Unknown'}. The image should visually represent the main themes and topics discussed in this article. High quality, modern, professional news illustration style.`;
         console.log('Generating image with prompt:', prompt);
         const res = await generateImage(prompt, "16:9", "1K");
         
@@ -349,8 +355,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const uniqueSeed = Date.now();
         const styleVariations = ['modern interface screenshot', 'sleek dashboard mockup', 'professional product demo', 'futuristic app display', 'clean UI design'];
         const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
-        
-        const prompt = `Create a ${randomStyle} for "${newTool.name}" - a ${newTool.category} AI tool. SPECIFIC PURPOSE: ${newTool.description || 'innovative AI solution'}. PRICING: ${newTool.price || 'Unknown'}. KEY FEATURES: ${newTool.tags?.join(', ') || 'AI-powered'}. Show the exact ${newTool.category} functionality described. Make it visually unique and distinct. High quality, modern tech style. SEED: ${uniqueSeed}`;
+
+        const prompt = toolImagePrompt?.trim()
+          ? `${toolImagePrompt.trim()} | Tool: "${newTool.name}" (${newTool.category}). Purpose: ${newTool.description || 'innovative AI solution'}. Pricing: ${newTool.price || 'Unknown'}. Key features: ${newTool.tags?.join(', ') || 'AI-powered'}. Style hint: ${randomStyle}. Seed: ${uniqueSeed}.`
+          : `Create a ${randomStyle} for "${newTool.name}" - a ${newTool.category} AI tool. SPECIFIC PURPOSE: ${newTool.description || 'innovative AI solution'}. PRICING: ${newTool.price || 'Unknown'}. KEY FEATURES: ${newTool.tags?.join(', ') || 'AI-powered'}. Show the exact ${newTool.category} functionality described. Make it visually unique and distinct. High quality, modern tech style. SEED: ${uniqueSeed}`;
         console.log('Generating tool image with prompt:', prompt);
         const res = await generateImage(prompt, "16:9", "1K");
         
@@ -555,6 +563,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setProcessingId(null);
     }
   };
+
+    const publishRssAsNews = async (item: any) => {
+    setProcessingId(item.id);
+    try {
+      const extracted = await extractNewsFromRSSItem(item.title, item.description);
+      const article: NewsArticle = {
+        id: crypto.randomUUID(),
+        title: extracted.title || item.title,
+        description: extracted.description || item.description,
+        content: extracted.content || item.description,
+        source: item.link || 'RSS Feed',
+        imageUrl: `https://picsum.photos/seed/${(extracted.title || item.title).replace(/\s/g,'')}/800/400`,
+        category: extracted.category || 'Tech News',
+        date: new Date().toISOString()
+      };
+      await onAddNews(article);
+      setLastSuccess({ type: 'news', data: article });
+    } catch (e) {
+      console.error(e);
+      alert("Failed to publish news from RSS.");
+    } finally {
+      setProcessingId(null);
+    }
+    };
 
   const handleAnalyze = async () => {
     setAnalyzing(true);
@@ -1005,19 +1037,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     )}
 
                     {toolImageMode === 'generate' && (
-                       <div className="flex gap-2 items-center">
-                           <div className="text-sm text-zinc-400 italic flex-1">
-                              Uses <strong>Gemini Imagen 3</strong> to create an image based on the tool name and category.
+                       <div className="space-y-3">
+                           <div className="text-sm text-zinc-400 italic">
+                              Uses <strong>Gemini Imagen 3</strong> to create an image based on your prompt plus the tool details.
                            </div>
-                           <button 
-                             type="button" 
-                             onClick={handleGenerateToolImage}
-                             disabled={generatingToolImg || !newTool.name}
-                             className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50"
-                           >
-                             {generatingToolImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                             Generate Image
-                           </button>
+                           <textarea
+                             value={toolImagePrompt}
+                             onChange={(e) => setToolImagePrompt(e.target.value)}
+                             className="w-full bg-zinc-900 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-indigo-500 outline-none"
+                             placeholder="Optional: Describe the style or scene you want (e.g., 'dark theme dashboard with charts and code panels')."
+                             rows={3}
+                           />
+                           <div className="flex justify-end">
+                             <button 
+                               type="button" 
+                               onClick={handleGenerateToolImage}
+                               disabled={generatingToolImg || !newTool.name}
+                               className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50"
+                             >
+                               {generatingToolImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                               Generate Image
+                             </button>
+                           </div>
                        </div>
                     )}
 
@@ -1095,6 +1136,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                             {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Newspaper className="w-3 h-3" />}
                             Edit as News
+                        </button>
+                        <button 
+                          onClick={() => publishRssAsNews(item)}
+                          disabled={!!processingId}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+                        >
+                          {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                          Publish News
                         </button>
                     </div>
                  </div>
@@ -1218,19 +1267,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                        )}
 
                        {newsImageMode === 'generate' && (
-                          <div className="flex gap-2 items-center">
-                              <div className="text-sm text-zinc-400 italic flex-1">
-                                 Uses <strong>Gemini 3 Pro</strong> to create an image based on the article title.
+                          <div className="space-y-3">
+                              <div className="text-sm text-zinc-400 italic">
+                                 Uses <strong>Gemini 3 Pro</strong> to create an image based on your prompt plus the article details.
                               </div>
-                              <button 
-                                type="button" 
-                                onClick={handleGenerateNewsImage}
-                                disabled={generatingImg || !newNews.title}
-                                className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50"
-                              >
-                                {generatingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                                Generate Image
-                              </button>
+                              <textarea
+                                value={newsImagePrompt}
+                                onChange={(e) => setNewsImagePrompt(e.target.value)}
+                                className="w-full bg-zinc-900 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-purple-500 outline-none"
+                                placeholder="Optional: Describe the style or scene you want (e.g., 'editorial illustration with headline on holographic screens')."
+                                rows={3}
+                              />
+                              <div className="flex justify-end">
+                                <button 
+                                  type="button" 
+                                  onClick={handleGenerateNewsImage}
+                                  disabled={generatingImg || !newNews.title}
+                                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 disabled:opacity-50"
+                                >
+                                  {generatingImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                                  Generate Image
+                                </button>
+                              </div>
                           </div>
                        )}
 

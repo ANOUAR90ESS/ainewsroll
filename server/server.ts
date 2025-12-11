@@ -220,86 +220,122 @@ Disallow: /
   }
 }
 
+const slugifyCategory = (cat: string) => cat.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+async function fetchAllRows<T>(table: string, columns: string, chunkSize = 500): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select(columns)
+      .range(from, from + chunkSize - 1);
+
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+
+    rows.push(...data);
+    if (data.length < chunkSize) break;
+    from += chunkSize;
+  }
+  return rows;
+}
+
 /**
  * Generate Dynamic Sitemap.xml
  */
 async function generateSitemap(): Promise<string> {
   try {
-    const { data: tools } = await supabaseAdmin
-      .from('tools')
-      .select('id, name, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(100);
+    const baseUrl = 'https://ainewsroll.space';
 
-    const { data: news } = await supabaseAdmin
-      .from('news')
-      .select('id, title, date')
-      .order('date', { ascending: false })
-      .limit(50);
+    const tools = await fetchAllRows<any>('tools', 'id, name, updated_at, image_url, category');
+    const news = await fetchAllRows<any>('news', 'id, title, date');
+
+    const uniqueCategories = Array.from(new Set(tools.map((t) => t.category).filter(Boolean)));
 
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
-    <loc>https://ainewsroll.space/</loc>
+    <loc>${baseUrl}/</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/tool-directory</loc>
+    <loc>${baseUrl}/tool-directory</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/latest-news</loc>
+    <loc>${baseUrl}/latest-news</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/smart-chat</loc>
+    <loc>${baseUrl}/smart-chat</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/about-us</loc>
+    <loc>${baseUrl}/about-us</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/privacy-policy</loc>
+    <loc>${baseUrl}/privacy-policy</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ainewsroll.space/terms-of-service</loc>
+    <loc>${baseUrl}/terms-of-service</loc>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 `;
 
-    // Add Tools
-    tools?.forEach(tool => {
-      const date = tool.updated_at ? tool.updated_at.split('T')[0] : new Date().toISOString().split('T')[0];
+    // Category landing pages
+    uniqueCategories.forEach((cat) => {
+      const slug = slugifyCategory(cat);
       sitemap += `  <url>
-    <loc>https://ainewsroll.space/tool/${tool.id}</loc>
+    <loc>${baseUrl}/category/${slug}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+`;
+    });
+
+    // Add Tools with images
+    tools.forEach((tool) => {
+      const date = tool.updated_at ? tool.updated_at.split('T')[0] : new Date().toISOString().split('T')[0];
+      const imageTag = tool.image_url
+        ? `
+    <image:image>
+      <image:loc>${tool.image_url}</image:loc>
+      <image:title>${tool.name}</image:title>
+    </image:image>`
+        : '';
+
+      sitemap += `  <url>
+    <loc>${baseUrl}/tool/${tool.id}</loc>
     <lastmod>${date}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.8</priority>${imageTag}
   </url>
 `;
     });
 
     // Add News
-    news?.forEach(article => {
+    news.forEach((article) => {
       const date = article.date ? article.date.split('T')[0] : new Date().toISOString().split('T')[0];
       sitemap += `  <url>
-    <loc>https://ainewsroll.space/news/${article.id}</loc>
+    <loc>${baseUrl}/news/${article.id}</loc>
     <lastmod>${date}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
