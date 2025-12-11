@@ -156,8 +156,14 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
     try {
       console.log(`🖼️ Generating image ${i + 1}/${tools.length} for: ${t.name}`);
 
-      // Create DETAILED descriptive prompt using ALL tool information
-      const imagePrompt = `Create a professional, unique icon or interface for an AI tool. Name: "${t.name}". Category: ${t.category}. Full Description: ${t.description}. Price: ${t.price}. Tags: ${t.tags?.join(', ') || 'None'}. Website: ${t.website}. The image should visually represent the specific functionality of this ${t.category} tool based on what it does: ${t.description}. Make it distinct, modern, high-quality, tech-focused with vibrant colors. Each tool needs a UNIQUE visual identity.`;
+      // Create HIGHLY DETAILED and UNIQUE prompt for each tool with variation keywords
+      const variationKeywords = [
+        'futuristic interface', 'modern dashboard', 'sleek design', 'vibrant display', 'professional mockup',
+        'clean UI', 'tech visualization', 'digital workspace', 'innovative layout', 'smart interface'
+      ];
+      const randomVariation = variationKeywords[i % variationKeywords.length];
+      
+      const imagePrompt = `Create a UNIQUE ${randomVariation} for the AI tool "${t.name}". SPECIFIC DETAILS: This is a ${t.category} tool. EXACT PURPOSE: ${t.description}. PRICING: ${t.price}. KEY FEATURES: ${t.tags?.join(', ') || 'advanced AI capabilities'}. VISUAL STYLE: Show the specific ${t.category} functionality - ${t.description}. IMPORTANT: Make this image #${i + 1} completely different from others. High-quality, modern, tech-focused. SEED: ${Date.now() + i * 1000}`;
 
       let imageUrl;
 
@@ -327,8 +333,12 @@ export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
 // --- Generate Image for Tool ---
 export const generateImageForTool = async (toolName: string, toolDescription: string, category: string): Promise<string> => {
   try {
-    // Create DETAILED descriptive prompt using ALL available information
-    const imagePrompt = `Create a professional, unique visual representation for an AI tool. Name: "${toolName}". Category: ${category}. Complete Description: ${toolDescription}. The image must visually represent the specific purpose and functionality described: ${toolDescription}. Make it distinct and unique from other ${category} tools. Modern, high-quality, tech-focused with vibrant colors. IMPORTANT: Each tool needs a completely UNIQUE visual identity that matches its specific function.`;
+    // Create DETAILED descriptive prompt using ALL available information with uniqueness factors
+    const uniqueSeed = Date.now();
+    const styleVariations = ['modern interface', 'sleek dashboard', 'professional mockup', 'futuristic display', 'clean design'];
+    const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
+    
+    const imagePrompt = `Create a ${randomStyle} for "${toolName}" - a ${category} AI tool. EXACT FUNCTIONALITY: ${toolDescription}. Show the SPECIFIC features described: ${toolDescription}. Make it visually distinct and unique. High-quality, tech-focused, vibrant colors. UNIQUE SEED: ${uniqueSeed}. IMPORTANT: This must look completely different from other ${category} tools.`;
 
     // Generate image with Gemini
     const imageData = await callGeminiAPI('generateImage', {

@@ -346,7 +346,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingToolImg(true);
     try {
-        const prompt = `Create a professional icon or illustration for an AI tool. Name: "${newTool.name}". Category: ${newTool.category}. Description: ${newTool.description || 'Not provided'}. Price: ${newTool.price || 'Unknown'}. Website: ${newTool.website || 'Unknown'}. Tags: ${newTool.tags?.join(', ') || 'None'}. The image should visually represent what this ${newTool.category} tool does based on its description and purpose. High quality, modern tech style, professional.`;
+        const uniqueSeed = Date.now();
+        const styleVariations = ['modern interface screenshot', 'sleek dashboard mockup', 'professional product demo', 'futuristic app display', 'clean UI design'];
+        const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
+        
+        const prompt = `Create a ${randomStyle} for "${newTool.name}" - a ${newTool.category} AI tool. SPECIFIC PURPOSE: ${newTool.description || 'innovative AI solution'}. PRICING: ${newTool.price || 'Unknown'}. KEY FEATURES: ${newTool.tags?.join(', ') || 'AI-powered'}. Show the exact ${newTool.category} functionality described. Make it visually unique and distinct. High quality, modern tech style. SEED: ${uniqueSeed}`;
         console.log('Generating tool image with prompt:', prompt);
         const res = await generateImage(prompt, "16:9", "1K");
         
