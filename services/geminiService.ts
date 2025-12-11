@@ -398,6 +398,49 @@ export const generateImageForTool = async (toolName: string, toolDescription: st
 };
 
 /**
+ * Generate a complete AI tool from just a topic or tool name
+ * Creates: name, description, category, price, tags, website, how_to_use, features, use_cases, pros_cons
+ */
+export const generateToolFromTopic = async (topic: string): Promise<Partial<Tool>> => {
+  try {
+    const prompt = `You are an AI tools expert. Given the topic "${topic}", create a COMPLETE AI tool profile.
+
+Research and provide:
+1. Tool name (if not a specific tool name, suggest a popular real tool in this category)
+2. Short description (1-2 sentences, compelling and clear)
+3. Best matching category from: Writing, Image, Video, Audio, Coding, Business, Data Analysis, Healthcare, Education, Design
+4. Realistic pricing model: Free, Freemium, Paid, or "From $X/month"
+5. 3-5 relevant tags (lowercase, one-word when possible)
+6. Official website URL (real if exists, or https://example.com if generic topic)
+7. How to Use: Step-by-step guide (numbered steps)
+8. Key Features: Detailed list of main features (bullet points)
+9. Use Cases: Real-world examples (bullet points)
+10. Pros & Cons: Balanced analysis
+
+Return as JSON with keys: name, description, category, price, tags (array), website, how_to_use, features_detailed, use_cases, pros_cons.
+Be specific and realistic. If "${topic}" is a real tool name, use accurate information.`;
+
+    const data = await callGeminiAPI('generateToolFromTopic', { topic, prompt });
+    
+    return {
+      name: data.name || topic,
+      description: data.description || '',
+      category: data.category || 'Business',
+      price: data.price || 'Freemium',
+      tags: data.tags || [],
+      website: data.website || 'https://',
+      how_to_use: data.how_to_use || '',
+      features_detailed: data.features_detailed || '',
+      use_cases: data.use_cases || '',
+      pros_cons: data.pros_cons || ''
+    };
+  } catch (error) {
+    console.error('Failed to generate tool from topic:', error);
+    throw new Error(`Failed to generate tool from topic "${topic}". Please try again or enter details manually.`);
+  }
+};
+
+/**
  * Generate detailed information about a tool for the detail page
  */
 export const enrichToolWithDetails = async (tool: Tool): Promise<Tool> => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool } from '../services/geminiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic } from '../services/geminiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';
@@ -46,6 +46,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [toolImageMode, setToolImageMode] = useState<'url' | 'upload' | 'generate'>('url');
   const [toolImagePrompt, setToolImagePrompt] = useState('');
   const [generatingToolImg, setGeneratingToolImg] = useState(false);
+  
+  // AI Topic Generation State
+  const [topicInput, setTopicInput] = useState('');
+  const [generatingFromTopic, setGeneratingFromTopic] = useState(false);
   
   // Generation & Review State
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
@@ -175,6 +179,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           setReviewQueue([]);
           alert("All tools published!");
       }
+  };
+
+  // Generate complete tool from just a topic/name using AI
+  const handleGenerateFromTopic = async () => {
+    if (!topicInput.trim()) {
+      alert('Please enter a tool name or topic');
+      return;
+    }
+
+    setGeneratingFromTopic(true);
+    try {
+      const generatedTool = await generateToolFromTopic(topicInput);
+      
+      // Auto-populate the form with AI-generated data
+      setNewTool({
+        ...generatedTool,
+        imageUrl: generatedTool.imageUrl || newTool.imageUrl
+      });
+      
+      // Generate image for the tool
+      if (generatedTool.name) {
+        try {
+          const imageUrl = await generateImageForTool(
+            generatedTool.name,
+            generatedTool.category || 'Business',
+            generatedTool.description || ''
+          );
+          setNewTool(prev => ({ ...prev, imageUrl }));
+        } catch (imgError) {
+          console.warn('Failed to generate image, using category default');
+        }
+      }
+      
+      alert(`✅ Tool "${generatedTool.name}" generated! Review and save when ready.`);
+      setTopicInput('');
+    } catch (error) {
+      console.error('Failed to generate tool from topic:', error);
+      alert(`Failed to generate tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setGeneratingFromTopic(false);
+    }
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -975,6 +1020,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     )}
                 </div>
             )}
+
+            {/* AI Topic Generation Section */}
+            <div className="bg-gradient-to-br from-indigo-950/50 to-purple-950/30 border border-indigo-800/50 rounded-xl p-6 mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">AI Tool Generator</h3>
+                        <p className="text-sm text-zinc-400">Just enter a tool name or topic - AI creates everything!</p>
+                    </div>
+                </div>
+                
+                <div className="flex gap-3">
+                    <input
+                        value={topicInput}
+                        onChange={e => setTopicInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && !generatingFromTopic && handleGenerateFromTopic()}
+                        placeholder="e.g., ChatGPT, image generation, code assistant..."
+                        className="flex-1 bg-zinc-950/80 border border-indigo-700/50 rounded-lg p-3.5 text-white placeholder-zinc-500 focus:border-indigo-500 outline-none"
+                        disabled={generatingFromTopic}
+                    />
+                    <button
+                        onClick={handleGenerateFromTopic}
+                        disabled={generatingFromTopic || !topicInput.trim()}
+                        className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white rounded-lg font-semibold flex items-center gap-2 transition-all"
+                    >
+                        {generatingFromTopic ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Wand2 className="w-5 h-5" />
+                                Generate
+                            </>
+                        )}
+                    </button>
+                </div>
+                
+                <div className="mt-3 text-xs text-indigo-300 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>
+                        AI will create: name, description, category, price, tags, website, how-to guide, features, use cases, pros & cons, and image!
+                    </span>
+                </div>
+            </div>
 
             <div className={`bg-zinc-900/50 border rounded-xl p-6 ${editingId ? 'border-indigo-500/50 shadow-lg shadow-indigo-500/10' : 'border-zinc-800'}`}>
                 <div className="flex justify-between items-center mb-4">
