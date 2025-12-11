@@ -156,8 +156,8 @@ export const generateDirectoryTools = async (category?: string): Promise<Tool[]>
     try {
       console.log(`🖼️ Generating image ${i + 1}/${tools.length} for: ${t.name}`);
 
-      // Create descriptive prompt for the tool image
-      const imagePrompt = `Professional, modern AI tool interface for "${t.name}", ${t.category} tool. ${t.description}. Sleek UI design, vibrant colors, tech-focused, high quality 4K screenshot.`;
+      // Create DETAILED descriptive prompt using ALL tool information
+      const imagePrompt = `Create a professional, unique icon or interface for an AI tool. Name: "${t.name}". Category: ${t.category}. Full Description: ${t.description}. Price: ${t.price}. Tags: ${t.tags?.join(', ') || 'None'}. Website: ${t.website}. The image should visually represent the specific functionality of this ${t.category} tool based on what it does: ${t.description}. Make it distinct, modern, high-quality, tech-focused with vibrant colors. Each tool needs a UNIQUE visual identity.`;
 
       let imageUrl;
 
@@ -327,8 +327,8 @@ export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
 // --- Generate Image for Tool ---
 export const generateImageForTool = async (toolName: string, toolDescription: string, category: string): Promise<string> => {
   try {
-    // Create descriptive prompt for the tool image
-    const imagePrompt = `Professional product screenshot or icon for an AI tool called "${toolName}". ${toolDescription}. Category: ${category}. Modern, clean, tech-focused design with vibrant colors.`;
+    // Create DETAILED descriptive prompt using ALL available information
+    const imagePrompt = `Create a professional, unique visual representation for an AI tool. Name: "${toolName}". Category: ${category}. Complete Description: ${toolDescription}. The image must visually represent the specific purpose and functionality described: ${toolDescription}. Make it distinct and unique from other ${category} tools. Modern, high-quality, tech-focused with vibrant colors. IMPORTANT: Each tool needs a completely UNIQUE visual identity that matches its specific function.`;
 
     // Generate image with Gemini
     const imageData = await callGeminiAPI('generateImage', {
