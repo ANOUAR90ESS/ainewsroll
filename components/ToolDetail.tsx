@@ -89,6 +89,87 @@ const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite })
           </div>
         </div>
       </div>
+
+      {/* Detailed Sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* How to Use */}
+        {tool.how_to_use && (
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-indigo-400" /> How to Use
+            </h2>
+            <p className="text-zinc-300 leading-relaxed whitespace-pre-line text-sm">
+              {tool.how_to_use}
+            </p>
+          </div>
+        )}
+
+        {/* Features */}
+        {tool.features_detailed && (
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Tag className="w-5 h-5 text-indigo-400" /> Key Features
+            </h2>
+            <div className="space-y-2 text-sm text-zinc-300">
+              {tool.features_detailed.split('\n').map((feature, idx) => (
+                feature.trim() && (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <span className="text-indigo-400 mt-0.5">•</span>
+                    <span>{feature.trim()}</span>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Use Cases */}
+        {tool.use_cases && (
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Use Cases</h2>
+            <div className="space-y-2 text-sm text-zinc-300">
+              {tool.use_cases.split('\n').map((useCase, idx) => (
+                useCase.trim() && (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <span className="text-green-400 mt-0.5">→</span>
+                    <span>{useCase.trim()}</span>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pros & Cons */}
+        {tool.pros_cons && (
+          <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-white">Pros & Cons</h2>
+            <p className="text-zinc-300 leading-relaxed whitespace-pre-line text-sm">
+              {tool.pros_cons}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Screenshots */}
+      {tool.screenshots_urls && tool.screenshots_urls.length > 0 && (
+        <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 space-y-4">
+          <h2 className="text-xl font-bold text-white">Screenshots</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tool.screenshots_urls.map((screenshotUrl, idx) => (
+              <div key={idx} className="relative group rounded-lg overflow-hidden border border-zinc-700 hover:border-indigo-500 transition-colors">
+                <img 
+                  src={screenshotUrl} 
+                  alt={`${tool.name} screenshot ${idx + 1}`}
+                  className="w-full h-40 object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

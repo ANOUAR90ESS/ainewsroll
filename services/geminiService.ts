@@ -251,7 +251,32 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
   }
 
   console.log(`✨ Completed generating ${toolsWithImages.length} tools with images`);
-  return toolsWithImages;
+
+  // Enrich tools with detailed information (how to use, features, use cases, pros/cons)
+  console.log('🚀 Enriching tools with detailed information...');
+  const enrichedTools = await Promise.all(
+    toolsWithImages.map(async (tool, idx) => {
+      try {
+        console.log(`📖 Enriching tool ${idx + 1}/${toolsWithImages.length}: ${tool.name}`);
+        const enriched = await enrichToolWithDetails(tool);
+        console.log(`✅ Enriched: ${tool.name}`);
+        return enriched;
+      } catch (error) {
+        console.warn(`⚠️ Failed to enrich ${tool.name}, using defaults:`, error);
+        // Return tool with fallback empty details
+        return {
+          ...tool,
+          how_to_use: 'Visit the website for detailed usage instructions.',
+          features_detailed: 'Check the website for a complete list of features.',
+          use_cases: 'This tool can be used for various AI-powered tasks. Visit the website for examples.',
+          pros_cons: 'For detailed pros and cons, visit the tool website.'
+        };
+      }
+    })
+  );
+
+  console.log(`🎉 All tools enriched and ready!`);
+  return enrichedTools;
 };
 
 // --- Smart Chat (Search & Maps) ---
@@ -369,5 +394,41 @@ export const generateImageForTool = async (toolName: string, toolDescription: st
     console.error('Failed to generate image with Gemini:', error);
     // Fallback to Unsplash with better keywords
     return `https://source.unsplash.com/1200x630/?${category.toLowerCase()},technology,${toolName.split(' ')[0].toLowerCase()}`;
+  }
+};
+
+/**
+ * Generate detailed information about a tool for the detail page
+ */
+export const enrichToolWithDetails = async (tool: Tool): Promise<Tool> => {
+  try {
+    const prompt = `Generate comprehensive details about the AI tool "${tool.name}". Provide:
+1. A detailed step-by-step "How to Use" guide (3-5 steps)
+2. Detailed breakdown of key features and capabilities
+3. Real-world use cases and examples
+4. Pros and cons of using this tool
+
+Format as JSON with keys: how_to_use, features_detailed, use_cases, pros_cons. Keep each section concise but informative (2-3 sentences each).`;
+
+    const data = await callGeminiAPI('enrichToolDetails', { toolName: tool.name, prompt });
+    
+    return {
+      ...tool,
+      how_to_use: data.how_to_use || '',
+      features_detailed: data.features_detailed || '',
+      use_cases: data.use_cases || '',
+      pros_cons: data.pros_cons || '',
+      screenshots_urls: data.screenshots_urls || []
+    };
+  } catch (error) {
+    console.error('Failed to enrich tool details:', error);
+    // Return tool with empty detail fields if enrichment fails
+    return {
+      ...tool,
+      how_to_use: 'Visit the website for detailed usage instructions.',
+      features_detailed: 'Check the website for a complete list of features.',
+      use_cases: 'This tool can be used for various AI-powered tasks. Visit the website for examples.',
+      pros_cons: 'For detailed pros and cons, visit the tool website.'
+    };
   }
 };

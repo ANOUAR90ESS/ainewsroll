@@ -9,6 +9,12 @@ export interface Tool {
   price: string;
   imageUrl: string;
   website: string;
+  // Extended details for ToolDetail page
+  how_to_use?: string;  // Step-by-step guide
+  features_detailed?: string;  // Detailed feature breakdown
+  use_cases?: string;  // Common use cases and examples
+  pros_cons?: string;  // Pros and cons
+  screenshots_urls?: string[];  // Array of screenshot URLs
 }
 
 export interface NewsArticle {

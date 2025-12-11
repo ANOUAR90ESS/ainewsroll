@@ -1048,6 +1048,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     />
                 </div>
                 
+                {/* Detailed Fields Section */}
+                <div className="bg-zinc-950/50 border border-zinc-800 rounded-lg p-4 space-y-4">
+                  <h3 className="font-semibold text-white flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-400" /> Detailed Information (Optional)
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">How to Use</label>
+                    <textarea 
+                      value={newTool.how_to_use || ''} 
+                      onChange={e => setNewTool({...newTool, how_to_use: e.target.value})} 
+                      placeholder="Step-by-step guide on how to use this tool..." 
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-3 text-white h-20 focus:border-indigo-500 outline-none text-sm" 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Key Features</label>
+                    <textarea 
+                      value={newTool.features_detailed || ''} 
+                      onChange={e => setNewTool({...newTool, features_detailed: e.target.value})} 
+                      placeholder="List key features (one per line)..." 
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-3 text-white h-20 focus:border-indigo-500 outline-none text-sm" 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Use Cases</label>
+                    <textarea 
+                      value={newTool.use_cases || ''} 
+                      onChange={e => setNewTool({...newTool, use_cases: e.target.value})} 
+                      placeholder="Real-world use cases and examples (one per line)..." 
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-3 text-white h-20 focus:border-indigo-500 outline-none text-sm" 
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-zinc-400 mb-1">Pros & Cons</label>
+                    <textarea 
+                      value={newTool.pros_cons || ''} 
+                      onChange={e => setNewTool({...newTool, pros_cons: e.target.value})} 
+                      placeholder="Advantages and disadvantages of this tool..." 
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded p-3 text-white h-20 focus:border-indigo-500 outline-none text-sm" 
+                    />
+                  </div>
+                </div>
+                
                 <div>
                   <label className="block text-sm text-zinc-400 mb-2">Featured Image</label>
                   <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4">
