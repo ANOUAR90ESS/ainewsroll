@@ -266,59 +266,62 @@ async function fetchAllRows<T>(table: string, columns: string, chunkSize = 500):
  */
 async function generateSitemap(): Promise<string> {
   try {
-    if (missingEnvError() || !supabaseAdmin) {
-      throw new Error('Supabase credentials are missing');
-    }
     const baseUrl = 'https://ainewsroll.space';
-
-    const tools = await fetchAllRows<any>('tools', 'id, name, updated_at, image_url, category');
-    const news = await fetchAllRows<any>('news', 'id, title, date');
+    
+    let tools: any[] = [];
+    let news: any[] = [];
+    
+    // Safely fetch data with error handling
+    try {
+      if (!missingEnvError() && supabaseAdmin) {
+        tools = await fetchAllRows<any>('tools', 'id, name, updated_at, image_url, category');
+      }
+    } catch (err) {
+      console.warn('Warning: Could not fetch tools for sitemap:', err);
+    }
+    
+    try {
+      if (!missingEnvError() && supabaseAdmin) {
+        news = await fetchAllRows<any>('news', 'id, title, date');
+      }
+    } catch (err) {
+      console.warn('Warning: Could not fetch news for sitemap:', err);
+    }
 
     const uniqueCategories = Array.from(new Set(tools.map((t) => t.category).filter(Boolean)));
+    const today = new Date().toISOString().split('T')[0];
 
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>${baseUrl}/</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${baseUrl}/tool-directory</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/latest-news</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <loc>${baseUrl}/news</loc>
+    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>${baseUrl}/smart-chat</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <loc>${baseUrl}/tools/free</loc>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>${baseUrl}/about-us</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>${baseUrl}/tools/paid</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>${baseUrl}/privacy-policy</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/terms-of-service</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <loc>${baseUrl}/tools/latest</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.85</priority>
   </url>
 `;
 
@@ -327,50 +330,80 @@ async function generateSitemap(): Promise<string> {
       const slug = slugifyCategory(cat);
       sitemap += `  <url>
     <loc>${baseUrl}/category/${slug}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
 `;
     });
 
-    // Add Tools with images
+    // Add Tools with images (safely handle escaped content)
     tools.forEach((tool) => {
-      const date = tool.updated_at ? tool.updated_at.split('T')[0] : new Date().toISOString().split('T')[0];
-      const imageTag = tool.image_url
-        ? `
+      try {
+        const date = tool.updated_at ? tool.updated_at.split('T')[0] : today;
+        const safeName = (tool.name || '').replace(/[&<>"']/g, (c: string) => {
+          const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' };
+          return map[c];
+        });
+        
+        const imageTag = tool.image_url
+          ? `
     <image:image>
       <image:loc>${tool.image_url}</image:loc>
-      <image:title>${tool.name}</image:title>
+      <image:title>${safeName}</image:title>
     </image:image>`
-        : '';
+          : '';
 
-      sitemap += `  <url>
+        sitemap += `  <url>
     <loc>${baseUrl}/tool/${tool.id}</loc>
     <lastmod>${date}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>${imageTag}
   </url>
 `;
+      } catch (toolErr) {
+        console.warn('Warning: Error processing tool for sitemap:', toolErr);
+      }
     });
 
-    // Add News
+    // Add News (safely handle escaped content)
     news.forEach((article) => {
-      const date = article.date ? article.date.split('T')[0] : new Date().toISOString().split('T')[0];
-      sitemap += `  <url>
+      try {
+        const date = article.date ? article.date.split('T')[0] : today;
+        sitemap += `  <url>
     <loc>${baseUrl}/news/${article.id}</loc>
     <lastmod>${date}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
 `;
+      } catch (newsErr) {
+        console.warn('Warning: Error processing news for sitemap:', newsErr);
+      }
     });
 
     sitemap += `</urlset>`;
     return sitemap;
   } catch (err) {
     console.error('Error generating sitemap:', err);
-    throw err;
+    // Return minimal valid sitemap as fallback
+    const baseUrl = 'https://ainewsroll.space';
+    const today = new Date().toISOString().split('T')[0];
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/news</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>`;
   }
 }
 
