@@ -24,7 +24,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     { path: '/tools/free', label: 'Free Tools', icon: Sparkles },
     { path: '/tools/paid', label: 'Paid Tools', icon: DollarSign },
     { path: '/tools/latest', label: 'Latest Tools', icon: Clock },
-    { path: '/chat', label: 'Smart Chat', icon: MessageSquare },
     { path: '/news', label: 'Latest News', icon: Newspaper },
   ];
 

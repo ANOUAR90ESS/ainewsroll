@@ -14,7 +14,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: 'Is AI News-Roll free to use?',
-    answer: 'Yes! AI News-Roll is completely free to access. You can browse our tool directory, read the latest AI news, and use our smart chat feature without any subscription required.'
+    answer: 'Yes! AI News-Roll is completely free to access. You can browse our tool directory and read the latest AI news without any subscription required.'
   },
   {
     question: 'What AI tools are featured on AI News-Roll?',
@@ -28,10 +28,7 @@ const FAQ_ITEMS: FAQItem[] = [
     question: 'How often is the AI news updated?',
     answer: 'Our news section is updated multiple times daily to ensure you stay informed about the latest developments in artificial intelligence and machine learning.'
   },
-  {
-    question: 'What is the Smart Chat feature?',
-    answer: 'Smart Chat is our AI-powered conversation feature powered by Google Gemini 2.5 Flash. You can ask questions about AI tools, technologies, and get personalized recommendations.'
-  },
+  
   {
     question: 'Is my data private on AI News-Roll?',
     answer: 'Yes, your privacy is important to us. We use secure authentication and do not share your data with third parties. Please review our Privacy Policy for more details.'

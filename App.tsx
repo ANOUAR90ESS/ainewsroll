@@ -11,7 +11,6 @@ import { useGA4, trackPageView, trackCategoryView, trackToolVisit, trackToolDeta
 
 // Lazy load heavy components
 const LiveDemo = lazy(() => import('./components/demos/LiveDemo'));
-const SearchChat = lazy(() => import('./components/demos/SearchChat'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const NewsFeed = lazy(() => import('./components/demos/NewsFeed'));
 const GenericPage = lazy(() => import('./components/GenericPage'));
@@ -63,7 +62,6 @@ const App: React.FC = () => {
     if (pathname === '/tools/free') return AppView.FREE_TOOLS;
     if (pathname === '/tools/paid') return AppView.PAID_TOOLS;
     if (pathname === '/tools/latest') return AppView.LATEST_TOOLS;
-    if (pathname === '/chat') return AppView.SMART_CHAT;
     if (pathname === '/news') return AppView.LATEST_NEWS;
     if (pathname === '/analytics') return AppView.ANALYTICS;
     if (pathname === '/admin') return AppView.ADMIN;
@@ -103,7 +101,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const titleMap: Record<AppView, string> = {
       [AppView.HOME]: 'AI Tool Directory | AI News-Roll',
-      [AppView.SMART_CHAT]: 'Smart Chat | AI News-Roll',
+      
       [AppView.LATEST_NEWS]: 'Latest News | AI News-Roll',
       [AppView.ANALYTICS]: 'Analytics Dashboard | AI News-Roll',
       [AppView.ADMIN]: 'Admin Dashboard | AI News-Roll',
@@ -287,7 +285,6 @@ const App: React.FC = () => {
       // Map AppView to URL path
       const viewToPath: Record<AppView, string> = {
         [AppView.HOME]: '/',
-        [AppView.SMART_CHAT]: '/chat',
         [AppView.LATEST_NEWS]: '/news',
         [AppView.ANALYTICS]: '/analytics',
         [AppView.ADMIN]: '/admin',
@@ -553,14 +550,7 @@ const App: React.FC = () => {
           ogType: 'website'
         };
 
-      case AppView.SMART_CHAT:
-        return {
-          title: 'Smart Chat with Gemini | AI News-Roll',
-          description: 'Chat with Gemini AI powered by Google Search and Maps. Get real-time information and grounded answers.',
-          keywords: 'AI chat, Gemini AI, Google search AI, AI assistant, conversational AI',
-          canonical: `${baseUrl}/chat`,
-          ogType: 'website'
-        };
+      
 
       case AppView.LATEST_NEWS:
         return {
@@ -929,11 +919,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {currentView === AppView.SMART_CHAT && (
-                <Suspense fallback={<LoadingFallback />}>
-                  <SearchChat />
-                </Suspense>
-              )}
+              
               {currentView === AppView.LATEST_NEWS && (
                 <Suspense fallback={<LoadingFallback />}>
                   <NewsFeed articles={news} />
