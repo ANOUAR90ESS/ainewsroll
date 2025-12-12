@@ -8,16 +8,18 @@ interface SEOProps {
   ogType?: string;
   twitterCard?: 'summary' | 'summary_large_image';
   canonical?: string;
+  schema?: any;
 }
 
 const SEO: React.FC<SEOProps> = ({
-  title = 'AI Tool Directory | AI News-Roll',
-  description = 'Discover the latest AI tools and breaking AI news. Your comprehensive directory for AI-powered solutions.',
-  keywords = 'AI tools, artificial intelligence, AI news, machine learning, AI directory, generative AI',
+  title = 'AI Tool Directory & Latest AI News | AI News-Roll',
+  description = 'Discover 1000+ AI tools, breaking AI news, and industry insights. Your complete guide to artificial intelligence, machine learning, and generative AI solutions.',
+  keywords = 'AI tools directory, artificial intelligence, AI news, machine learning, generative AI, AI software, AI applications, best AI tools, AI directory',
   ogImage = 'https://ainewsroll.space/og-image.jpg',
   ogType = 'website',
   twitterCard = 'summary_large_image',
-  canonical
+  canonical,
+  schema
 }) => {
   useEffect(() => {
     // Update document title
@@ -39,6 +41,10 @@ const SEO: React.FC<SEOProps> = ({
     // Basic meta tags
     setMetaTag('description', description);
     setMetaTag('keywords', keywords);
+    setMetaTag('viewport', 'width=device-width, initial-scale=1.0');
+    setMetaTag('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+    setMetaTag('language', 'English');
+    setMetaTag('author', 'AI News-Roll');
 
     // Open Graph tags
     setMetaTag('og:title', title, 'property');
@@ -47,12 +53,17 @@ const SEO: React.FC<SEOProps> = ({
     setMetaTag('og:type', ogType, 'property');
     setMetaTag('og:url', canonical || window.location.href, 'property');
     setMetaTag('og:site_name', 'AI News-Roll', 'property');
+    setMetaTag('og:locale', 'en_US', 'property');
 
     // Twitter Card tags
     setMetaTag('twitter:card', twitterCard);
+    setMetaTag('twitter:site', '@ainewsroll');
     setMetaTag('twitter:title', title);
     setMetaTag('twitter:description', description);
     setMetaTag('twitter:image', ogImage);
+
+    // Additional SEO meta tags
+    setMetaTag('theme-color', '#1a1a1a');
 
     // Canonical URL
     if (canonical) {
@@ -66,7 +77,20 @@ const SEO: React.FC<SEOProps> = ({
 
       linkElement.href = canonical;
     }
-  }, [title, description, keywords, ogImage, ogType, twitterCard, canonical]);
+
+    // Add JSON-LD schema markup
+    if (schema) {
+      let scriptElement = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
+
+      if (!scriptElement) {
+        scriptElement = document.createElement('script');
+        scriptElement.type = 'application/ld+json';
+        document.head.appendChild(scriptElement);
+      }
+
+      scriptElement.innerHTML = JSON.stringify(schema);
+    }
+  }, [title, description, keywords, ogImage, ogType, twitterCard, canonical, schema]);
 
   return null;
 };

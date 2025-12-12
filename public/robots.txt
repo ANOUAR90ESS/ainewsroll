@@ -1,10 +1,23 @@
 User-agent: *
 Allow: /
+Allow: /tools/
+Allow: /tools/free
+Allow: /tools/paid
+Allow: /tools/latest
+Allow: /news
+Allow: /category/
+
 Disallow: /admin
+Disallow: /payment
 Disallow: /.env*
 Disallow: /private
+Disallow: /api/
+Disallow: /node_modules/
+Disallow: /*?*sort=
+Disallow: /*?*filter=
 
 # Sitemaps - Dynamic endpoint
+Sitemap: https://ainewsroll.space/sitemap.xml
 Sitemap: https://ainewsroll.space/api/seo?sitemap=1&gzip=0
 
 # Static Resources
@@ -15,28 +28,47 @@ Allow: /*.jpg$
 Allow: /*.jpeg$
 Allow: /*.gif$
 Allow: /*.svg$
+Allow: /*.webp$
+Allow: /*.woff$
+Allow: /*.woff2$
 
 # Crawl delay
 Crawl-delay: 1
 Request-rate: 30/60
 
-# Common bot rules
+# Google Crawlers - Faster crawling allowed
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
+Request-rate: 50/60
 
+User-agent: Googlebot-Image
+Allow: /
+
+# Bing Crawlers
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
 User-agent: Slurp
 Allow: /
+Crawl-delay: 1
 
 User-agent: DuckDuckBot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Baiduspider
 Disallow: /
 
 User-agent: Yandex
 Disallow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
