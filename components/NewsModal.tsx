@@ -17,7 +17,7 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
 
   // Handle share
   const handleShare = async () => {
-    const shareUrl = window.location.href;
+    const articleUrl = `${window.location.origin}/news?article=${article.id}`;
     const text = `${article.title} - AI News-Roll`;
 
     if (navigator.share) {
@@ -25,15 +25,14 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
         await navigator.share({
           title: article.title,
           text: text,
-          url: shareUrl
+          url: articleUrl
         });
       } catch (err) {
         console.log('Share cancelled or failed');
       }
     } else {
       // Fallback: copy to clipboard
-      const url = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
-      navigator.clipboard.writeText(url).then(() => {
+      navigator.clipboard.writeText(articleUrl).then(() => {
         alert('Article link copied to clipboard!');
       });
     }

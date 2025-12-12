@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NewsArticle } from '../../types';
 import { Calendar, ExternalLink, Newspaper, Tag } from 'lucide-react';
 import NewsModal from '../NewsModal';
@@ -11,6 +11,20 @@ interface NewsFeedProps {
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+
+  // Check for article ID in URL params and open it on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const articleId = params.get('article');
+    
+    if (articleId && articles.length > 0) {
+      const article = articles.find(a => a.id === articleId);
+      if (article) {
+        setSelectedArticle(article);
+        trackNewsClick(article.title, article.source);
+      }
+    }
+  }, [articles]);
 
   const openArticle = (article: NewsArticle) => {
     setSelectedArticle(article);
