@@ -45,7 +45,7 @@ Return JSON array of slides.`;
 
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: prompt,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
           config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -72,7 +72,7 @@ Return JSON array of slides.`;
             model: 'imagen-3.0-generate-001',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
-              responseModalities: 'image'
+              responseModalities: ['image']
             }
           });
 
@@ -178,7 +178,9 @@ Return JSON array of slides.`;
           for (const [category, images] of Object.entries(categoryImages)) {
             if (prompt.toLowerCase().includes(category.toLowerCase())) {
               // Use hash of prompt to get consistent but different image
-              const hash = prompt.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+              const hash = prompt
+                .split('')
+                .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
               fallbackImage = images[hash % images.length];
               break;
             }

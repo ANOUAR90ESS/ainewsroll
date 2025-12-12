@@ -122,6 +122,11 @@ app.get('/api/books', requireAuth, (async (req: Request, res: Response) => {
          return;
     }
 
+        if (!supabaseAdmin) {
+          res.status(500).json({ error: 'Supabase client not initialized' });
+          return;
+        }
+
     // Query filtered by user_id for security
     const { data, error } = await supabaseAdmin
       .from('books')
@@ -150,7 +155,12 @@ app.post('/api/books', requireAuth, (async (req: Request, res: Response) => {
 
     const { title, content } = req.body;
 
-    const { data, error } = await supabaseAdmin
+        if (!supabaseAdmin) {
+          res.status(500).json({ error: 'Supabase client not initialized' });
+          return;
+        }
+
+        const { data, error } = await supabaseAdmin
       .from('books')
       .insert([{ title, content, owner_id: userId }])
       .select()
@@ -243,7 +253,8 @@ async function fetchAllRows<T>(table: string, columns: string, chunkSize = 500):
     if (error) throw error;
     if (!data || data.length === 0) break;
 
-    rows.push(...data);
+    const rowsToAdd = Array.isArray(data) ? (data as T[]) : [];
+    rows.push(...rowsToAdd);
     if (data.length < chunkSize) break;
     from += chunkSize;
   }

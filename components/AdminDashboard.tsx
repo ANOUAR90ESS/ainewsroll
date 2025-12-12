@@ -908,13 +908,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         {/* Generation Controls */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
-                                <label className="block text-sm text-zinc-400 mb-2">Number of Tools</label>
-                                <select 
-                                    value={batchCount} 
-                                    onChange={(e) => setBatchCount(Number(e.target.value))}
-                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
-                                    disabled={isGeneratingBatch}
-                                >
+                              <label htmlFor="batch-count" className="block text-sm text-zinc-400 mb-2">Number of Tools</label>
+                              <select
+                                id="batch-count"
+                                aria-label="Number of Tools"
+                                value={batchCount} 
+                                onChange={(e) => setBatchCount(Number(e.target.value))}
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
+                                disabled={isGeneratingBatch}
+                              >
                                     <option value={3}>3 tools</option>
                                     <option value={5}>5 tools</option>
                                     <option value={9}>9 tools</option>
@@ -925,13 +927,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </div>
                             
                             <div>
-                                <label className="block text-sm text-zinc-400 mb-2">Category Filter</label>
-                                <select 
-                                    value={batchCategory} 
-                                    onChange={(e) => setBatchCategory(e.target.value)}
-                                    className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
-                                    disabled={isGeneratingBatch}
-                                >
+                              <label htmlFor="batch-category" className="block text-sm text-zinc-400 mb-2">Category Filter</label>
+                              <select
+                                id="batch-category"
+                                aria-label="Category Filter"
+                                value={batchCategory} 
+                                onChange={(e) => setBatchCategory(e.target.value)}
+                                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-white focus:border-indigo-500 outline-none"
+                                disabled={isGeneratingBatch}
+                              >
                                     <option value="All Categories">All Categories</option>
                                     <option value="Writing">Writing</option>
                                     <option value="Image">Image</option>

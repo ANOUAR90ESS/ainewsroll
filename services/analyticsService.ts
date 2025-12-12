@@ -10,13 +10,13 @@ export const GA4_MEASUREMENT_ID = 'G-81P94TP3VF';
 declare global {
   interface Window {
     dataLayer: any[];
-    gtag: (...args: any[]) => void;
+    gtag?: (...args: any[]) => void;
   }
 }
 
 export const initializeGA4 = () => {
   if (typeof window === 'undefined') return;
-  if (window.gtag) return; // Prevent duplicate initialization
+  if (typeof window.gtag === 'function') return; // Prevent duplicate initialization
 
   // Add GA4 script
   const script = document.createElement('script');
@@ -45,7 +45,7 @@ export const trackEvent = (
   eventName: string,
   eventParams?: Record<string, any>
 ) => {
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     window.gtag('event', eventName, eventParams);
   }
 };
@@ -54,7 +54,7 @@ export const trackEvent = (
  * Track page view
  */
 export const trackPageView = (title: string, path: string) => {
-  if (typeof window !== 'undefined' && window.gtag) {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
     window.gtag('event', 'page_view', {
       page_title: title,
       page_path: path

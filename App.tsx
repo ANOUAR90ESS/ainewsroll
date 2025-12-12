@@ -101,7 +101,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const titleMap: Record<AppView, string> = {
       [AppView.HOME]: 'AI Tool Directory | AI News-Roll',
-      
+      [AppView.FREE_TOOLS]: 'Free AI Tools | AI News-Roll',
+      [AppView.PAID_TOOLS]: 'Paid AI Tools | AI News-Roll',
+      [AppView.LATEST_TOOLS]: 'Latest AI Tools | AI News-Roll',
       [AppView.LATEST_NEWS]: 'Latest News | AI News-Roll',
       [AppView.ANALYTICS]: 'Analytics Dashboard | AI News-Roll',
       [AppView.ADMIN]: 'Admin Dashboard | AI News-Roll',
@@ -285,6 +287,9 @@ const App: React.FC = () => {
       // Map AppView to URL path
       const viewToPath: Record<AppView, string> = {
         [AppView.HOME]: '/',
+        [AppView.FREE_TOOLS]: '/tools/free',
+        [AppView.PAID_TOOLS]: '/tools/paid',
+        [AppView.LATEST_TOOLS]: '/tools/latest',
         [AppView.LATEST_NEWS]: '/news',
         [AppView.ANALYTICS]: '/analytics',
         [AppView.ADMIN]: '/admin',

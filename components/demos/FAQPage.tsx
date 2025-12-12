@@ -74,7 +74,6 @@ const FAQPage: React.FC = () => {
               id={buttonId}
               onClick={() => setExpandedIndex(isExpanded ? null : index)}
               className="w-full px-6 py-4 flex items-center justify-between hover:bg-zinc-900/50 transition-colors text-left"
-              aria-expanded={isExpanded}
               aria-controls={panelId}
             >
               <h3 className="font-semibold text-white pr-4">{item.question}</h3>
