@@ -32,15 +32,13 @@ Allow: /*.webp$
 Allow: /*.woff$
 Allow: /*.woff2$
 
-# Crawl delay
-Crawl-delay: 1
-Request-rate: 30/60
+# Crawl control
+# Note: Googlebot ignores Crawl-delay and Request-rate.
+# These directives are intentionally omitted for the default agent.
 
 # Google Crawlers - Faster crawling allowed
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 0
-Request-rate: 50/60
 
 User-agent: Googlebot-Image
 Allow: /
