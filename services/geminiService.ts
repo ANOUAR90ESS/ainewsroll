@@ -279,18 +279,6 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
   return enrichedTools;
 };
 
-// --- Smart Chat (Search & Maps) ---
-export const sendChatMessage = async (history: {role: string, parts: any[]}[], message: string, useSearch: boolean, useMaps: boolean) => {
-  const data = await callGeminiAPI('chat', {
-    message,
-    history,
-    useSearch,
-    useMaps
-  });
-
-  return data;
-};
-
 // --- Veo Video Generation ---
 // Note: Video generation requires direct client access, consider moving to backend if needed
 export const generateVideo = async (prompt: string, imageBase64?: string, aspectRatio: '16:9' | '9:16' = '16:9'): Promise<any> => {
