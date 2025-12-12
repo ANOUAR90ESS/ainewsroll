@@ -1,6 +1,6 @@
 import React from 'react';
 import { NewsArticle } from '../types';
-import { X, Calendar, User, Tag, ExternalLink } from 'lucide-react';
+import { X, Calendar, User, Tag, ExternalLink, Share2 } from 'lucide-react';
 
 interface NewsModalProps {
   article: NewsArticle;
@@ -12,6 +12,30 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  // Handle share
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const text = `${article.title} - AI News-Roll`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: text,
+          url: shareUrl
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed');
+      }
+    } else {
+      // Fallback: copy to clipboard
+      const url = `${window.location.origin}${window.location.pathname}?article=${article.id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Article link copied to clipboard!');
+      });
     }
   };
 
@@ -101,7 +125,15 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
         </div>
         
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-end items-center shrink-0">
+        <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex justify-between items-center shrink-0">
+          <button 
+            onClick={handleShare}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors border border-indigo-500 flex items-center gap-2"
+            title="Share article"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </button>
           <button 
             onClick={onClose}
             className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors border border-zinc-700"
