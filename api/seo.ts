@@ -5,19 +5,31 @@ import zlib from 'zlib';
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+console.log('[SEO] Initializing with SUPABASE_URL:', !!SUPABASE_URL ? 'present' : 'missing');
+console.log('[SEO] Initializing with SUPABASE_SERVICE_ROLE_KEY:', !!SUPABASE_SERVICE_ROLE_KEY ? 'present' : 'missing');
+
 // Create Supabase client only if credentials are available
-const supabaseAdmin = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+let supabaseAdmin: any = null;
+try {
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
-    })
-  : null;
+    });
+    console.log('[SEO] Supabase client initialized');
+  } else {
+    console.log('[SEO] Supabase credentials missing; will use fallback');
+  }
+} catch (err) {
+  console.error('[SEO] Failed to create Supabase client:', err);
+  supabaseAdmin = null;
+}
 
 // In-memory cache
 const cache: { [key: string]: { data: string; timestamp: number } } = {};
-const CACHE_TTL = 0; // Disabled - regenerate on each request for debugging
+const CACHE_TTL = 600000; // 10 minutes
 
 function getCache(key: string): string | null {
   const entry = cache[key];
@@ -219,11 +231,14 @@ async function generateSitemap(): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { sitemap, gzip } = req.query;
-
   try {
+    console.log('[SEO] Incoming request:', { sitemap: req.query.sitemap, gzip: req.query.gzip });
+    
+    const { sitemap, gzip } = req.query;
+
     if (sitemap === '1') {
       // Generate sitemap
+      console.log('[SEO] Generating sitemap...');
       const sitemapContent = await generateSitemap();
       
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
@@ -232,23 +247,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (gzip === '1') {
         const compressed = zlib.gzipSync(sitemapContent);
         res.setHeader('Content-Encoding', 'gzip');
+        console.log('[SEO] Sending gzipped sitemap, size:', compressed.length);
         return res.send(compressed);
       }
       
+      console.log('[SEO] Sending sitemap, size:', sitemapContent.length);
       return res.send(sitemapContent);
     } else {
       // Generate robots.txt
+      console.log('[SEO] Generating robots.txt...');
       const robotsContent = await generateRobots();
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      console.log('[SEO] Sending robots.txt, size:', robotsContent.length);
       return res.send(robotsContent);
     }
   } catch (error) {
-    console.error('SEO endpoint error:', error);
+    console.error('[SEO] CRITICAL ERROR in handler:', error);
     
-    // Return a minimal but valid fallback sitemap to avoid 500 errors
-    const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    try {
+      // Always return a valid fallback response
+      const isSitemapRequest = req.query.sitemap === '1';
+      
+      if (isSitemapRequest) {
+        const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://ainewsroll.space/</loc>
@@ -264,12 +287,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   </url>
 </urlset>`;
 
-    if (req.query.sitemap === '1') {
-      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-      return res.send(fallbackSitemap);
-    } else {
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      return res.send('User-agent: *\nAllow: /\nSitemap: https://ainewsroll.space/sitemap.xml\n');
+        res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+        console.log('[SEO] Returning fallback sitemap due to error');
+        return res.send(fallbackSitemap);
+      } else {
+        const fallbackRobots = `User-agent: *
+Allow: /
+Sitemap: https://ainewsroll.space/sitemap.xml
+Sitemap: https://ainewsroll.space/api/seo?sitemap=1&gzip=0
+`;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        console.log('[SEO] Returning fallback robots.txt due to error');
+        return res.send(fallbackRobots);
+      }
+    } catch (fallbackErr) {
+      console.error('[SEO] FATAL ERROR - even fallback failed:', fallbackErr);
+      return res.status(500).json({ error: 'SEO generation failed' });
     }
   }
 }
