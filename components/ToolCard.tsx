@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Tag, Sparkles, Heart } from 'lucide-react';
+import { ExternalLink, Tag, Sparkles, Heart, BookOpen } from 'lucide-react';
 import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
 import { trackToolDetailView, trackToolVisit } from '../services/analyticsService';
@@ -37,6 +37,15 @@ const ToolCard: React.FC<ToolCardProps> = ({
     });
     setImageError(true);
   };
+
+  // Check if tool has extended content
+  const hasExtendedContent = !!(
+    tool.how_to_use ||
+    tool.features_detailed ||
+    tool.use_cases ||
+    tool.pros_cons ||
+    (tool.screenshots_urls && tool.screenshots_urls.length > 0)
+  );
 
   return (
     <>
@@ -117,13 +126,19 @@ const ToolCard: React.FC<ToolCardProps> = ({
           <p className="text-zinc-400 text-sm mb-4 line-clamp-2 flex-1">{tool.description}</p>
 
           <div className="flex justify-between items-center mb-3">
-            <Link 
-              to={`/tool/${tool.id}`} 
+            <Link
+              to={`/tool/${tool.id}`}
               onClick={() => trackToolDetailView(tool.name, tool.category)}
-              className="text-xs text-indigo-300 hover:text-indigo-100 font-semibold"
+              className="flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-100 font-semibold transition-colors"
             >
-              View details
+              {hasExtendedContent && <BookOpen className="w-3.5 h-3.5" />}
+              {hasExtendedContent ? 'Full Guide Available' : 'View details'}
             </Link>
+            {hasExtendedContent && (
+              <span className="text-[10px] bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-500/30">
+                Complete
+              </span>
+            )}
           </div>
           
           <div className="flex flex-wrap gap-2 mb-4">
