@@ -348,6 +348,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     e.preventDefault();
     if (!newNews.title || !newNews.content) return;
 
+    // Auto-generate image if not provided
+    let finalImageUrl: string = newNews.imageUrl || '';
+    if (!finalImageUrl || finalImageUrl === '') {
+      console.log('🎨 Auto-generating image for news article...');
+      setGeneratingImg(true);
+      try {
+        // Generate image based on title and description
+        const prompt = `Editorial illustration for news article: "${newNews.title}". ${newNews.description || ''}. Professional, modern, tech-focused style.`;
+        const generatedUrl = await generateImage(prompt);
+        finalImageUrl = generatedUrl;
+        console.log('✅ Image generated successfully');
+      } catch (error) {
+        console.error('❌ Failed to generate image:', error);
+        // Fallback to placeholder if generation fails
+        finalImageUrl = `https://picsum.photos/seed/${newNews.title}/800/400`;
+      } finally {
+        setGeneratingImg(false);
+      }
+    }
+
     const article: NewsArticle = {
       id: editingId || newNews.id || crypto.randomUUID(),
       title: newNews.title || "Untitled",
@@ -355,7 +375,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       content: newNews.content || "",
       source: newNews.source || "Nexus AI Blog",
       category: newNews.category || "General",
-      imageUrl: newNews.imageUrl || `https://picsum.photos/seed/${newNews.title}/800/400`,
+      imageUrl: finalImageUrl,
       date: new Date().toISOString()
     };
 
