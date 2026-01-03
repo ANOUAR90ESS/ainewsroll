@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NewsArticle } from '../types';
 import { Loader2, Globe, Download, Sparkles, CheckCircle, RefreshCw, X } from 'lucide-react';
-import { generateImage } from '../services/openaiService';
+import { getUnsplashImageForNews } from '../services/unsplashService';
 
 interface NewsScraperModalProps {
   isOpen: boolean;
@@ -50,18 +50,18 @@ const NewsScraperModal: React.FC<NewsScraperModalProps> = ({ isOpen, onClose, on
       const data = await response.json();
       const articles = data.articles || [];
 
-      // Generate images for each article
+      // Fetch Unsplash images for each article
       const articlesWithImages = await Promise.all(
         articles.map(async (article: any) => {
           let imageUrl = '';
           try {
-            imageUrl = await generateImage(
-              `Professional news photo for: ${article.title}. Photorealistic, high quality, journalistic style, editorial photography.`,
-              '16:9',
-              '1K'
+            imageUrl = await getUnsplashImageForNews(
+              article.title,
+              selectedCategory
             );
+            console.log('✅ Unsplash image fetched for:', article.title);
           } catch (error) {
-            console.warn('Failed to generate image for article:', error);
+            console.warn('Failed to fetch Unsplash image for article:', error);
             imageUrl = `https://picsum.photos/800/400?random=${Date.now()}-${article.title}`;
           }
 
@@ -257,7 +257,7 @@ const NewsScraperModal: React.FC<NewsScraperModalProps> = ({ isOpen, onClose, on
                   <ul className="list-disc list-inside space-y-1 text-zinc-400">
                     <li>AI searches real news sources from across the internet</li>
                     <li>Fetches current, factual articles from the past few days</li>
-                    <li>Generates professional images for each article using DALL-E</li>
+                    <li>Fetches professional images for each article from Unsplash</li>
                     <li>Articles are saved to your news feed for users to read</li>
                   </ul>
                 </div>

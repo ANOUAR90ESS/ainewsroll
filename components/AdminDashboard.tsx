@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
+import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
@@ -360,11 +361,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       console.log('🎨 Auto-generating image for news article...');
       setGeneratingImg(true);
       try {
-        // Generate image based on title and description
-        const prompt = `Editorial illustration for news article: "${newNews.title}". ${newNews.description || ''}. Professional, modern, tech-focused style.`;
-        const generatedUrl = await generateImage(prompt);
+        // Generate image based on title and category using Unsplash
+        console.log('🎨 Fetching Unsplash image for news article...');
+        const generatedUrl = await getUnsplashImageForNews(newNews.title || '', newNews.category || 'Technology');
         finalImageUrl = generatedUrl;
-        console.log('✅ Image generated successfully');
+        console.log('✅ Unsplash image fetched successfully:', generatedUrl);
       } catch (error) {
         console.error('❌ Failed to generate image:', error);
         // Fallback to placeholder if generation fails
@@ -439,49 +440,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingImg(true);
     try {
-      const prompt = newsImagePrompt?.trim()
-        ? newsImagePrompt
-        : `Create a professional editorial illustration for a news article. Title: "${newNews.title}". Category: ${newNews.category}. Description: ${newNews.description || 'Not provided'}. Full content: ${newNews.content || 'Not provided'}. Source: ${newNews.source || 'Unknown'}. The image should visually represent the main themes and topics discussed in this article. High quality, modern, professional news illustration style.`;
-        console.log('Generating image with prompt:', prompt);
-        const res = await generateImage(prompt, "16:9", "1K");
-        
-        console.log('Full response from generateImage:', res);
-        console.log('Candidates:', res.candidates);
-        console.log('First candidate:', res.candidates?.[0]);
-        console.log('Content:', res.candidates?.[0]?.content);
-        console.log('Parts:', res.candidates?.[0]?.content?.parts);
-        
-        let imgData = null;
-        let mimeType = null;
+      // Use custom prompt as search query if provided, otherwise use title + category
+      const searchQuery = newsImagePrompt?.trim() || newNews.title || '';
+      console.log('🎨 Fetching Unsplash image with query:', searchQuery);
 
-        for (const part of res.candidates?.[0]?.content?.parts || []) {
-           console.log('Processing part:', part);
-           if (part.inlineData) {
-             console.log('Found inlineData:', part.inlineData);
-             imgData = part.inlineData.data;
-             mimeType = part.inlineData.mimeType;
-           }
-        }
+      const imageUrl = await getUnsplashImageForNews(
+        searchQuery,
+        newNews.category || 'Technology'
+      );
 
-        console.log('Final imgData:', imgData);
-        console.log('MimeType:', mimeType);
-
-        if (imgData) {
-            // Check if it's a base64 image or URL
-            if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
-                // Base64 image from AI - convert to data URL
-                const imageUrl = `data:${mimeType};base64,${imgData}`;
-                console.log('Setting AI-generated base64 imageUrl');
-                setNewNews(prev => ({ ...prev, imageUrl }));
-            } else {
-                // It's a URL (Unsplash fallback)
-                console.log('Setting Unsplash URL:', imgData);
-                setNewNews(prev => ({ ...prev, imageUrl: imgData }));
-            }
-        } else {
-            console.error('No image data in response:', res);
-            alert("Failed to generate image.");
-        }
+      console.log('✅ Unsplash image URL:', imageUrl);
+      setNewNews(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateNewsImage:', e);
         alert("Error generating image: " + e.message);
@@ -497,36 +466,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingToolImg(true);
     try {
-        const uniqueSeed = Date.now();
-        const styleVariations = ['modern interface screenshot', 'sleek dashboard mockup', 'professional product demo', 'futuristic app display', 'clean UI design'];
-        const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
+        // Use custom prompt as search query if provided, otherwise use tool name
+        const searchQuery = toolImagePrompt?.trim() || newTool.name || '';
+        console.log('🎨 Fetching Unsplash image for tool with query:', searchQuery);
 
-        const prompt = toolImagePrompt?.trim()
-          ? `${toolImagePrompt.trim()} | Tool: "${newTool.name}" (${newTool.category}). Purpose: ${newTool.description || 'innovative AI solution'}. Pricing: ${newTool.price || 'Unknown'}. Key features: ${newTool.tags?.join(', ') || 'AI-powered'}. Style hint: ${randomStyle}. Seed: ${uniqueSeed}.`
-          : `Create a ${randomStyle} for "${newTool.name}" - a ${newTool.category} AI tool. SPECIFIC PURPOSE: ${newTool.description || 'innovative AI solution'}. PRICING: ${newTool.price || 'Unknown'}. KEY FEATURES: ${newTool.tags?.join(', ') || 'AI-powered'}. Show the exact ${newTool.category} functionality described. Make it visually unique and distinct. High quality, modern tech style. SEED: ${uniqueSeed}`;
-        console.log('Generating tool image with prompt:', prompt);
-        const res = await generateImage(prompt, "16:9", "1K");
-        
-        let imgData = null;
-        let mimeType = null;
+        const imageUrl = await getUnsplashImageForTool(
+          searchQuery,
+          newTool.category || 'Technology'
+        );
 
-        for (const part of res.candidates?.[0]?.content?.parts || []) {
-           if (part.inlineData) {
-             imgData = part.inlineData.data;
-             mimeType = part.inlineData.mimeType;
-           }
-        }
-
-        if (imgData) {
-            if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
-                const imageUrl = `data:${mimeType};base64,${imgData}`;
-                setNewTool(prev => ({ ...prev, imageUrl }));
-            } else {
-                setNewTool(prev => ({ ...prev, imageUrl: imgData }));
-            }
-        } else {
-            alert("Failed to generate tool image.");
-        }
+        console.log('✅ Unsplash tool image URL:', imageUrl);
+        setNewTool(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateToolImage:', e);
         alert("Error generating tool image: " + e.message);
@@ -826,16 +776,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const cleanContent = stripHtml(extracted.content || item.description).substring(0, 1000).trim();
         const title = (extracted.title || item.title).substring(0, 200).trim();
 
-        // Generate AI image
+        // Fetch Unsplash image
         let newsImageUrl: string;
         try {
-          newsImageUrl = await generateImage(
-            `Editorial illustration for news: "${title}". ${cleanDescription}. Professional, modern style.`,
-            "16:9",
-            "1K"
-          );
+          newsImageUrl = await getUnsplashImageForNews(title, extracted.category || 'Technology');
+          console.log('✅ Unsplash image fetched for RSS item:', title);
         } catch (imgError) {
-          console.warn('Image generation failed, using placeholder:', imgError);
+          console.warn('Unsplash fetch failed, using placeholder:', imgError);
           newsImageUrl = `https://picsum.photos/800/400?random=${Date.now()}-${i}`;
         }
 
@@ -1088,6 +1035,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <option value={12}>12 tools</option>
                                     <option value={15}>15 tools</option>
                                     <option value={20}>20 tools</option>
+                                    <option value={30}>30 tools</option>
+                                    <option value={40}>40 tools</option>
+                                    <option value={50}>50 tools</option>
+                                    <option value={75}>75 tools</option>
+                                    <option value={100}>100 tools</option>
                                 </select>
                             </div>
                             
