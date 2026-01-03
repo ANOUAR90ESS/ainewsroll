@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
-import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database } from 'lucide-react';
+import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe } from 'lucide-react';
 import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import NewsScraperModal from './NewsScraperModal';
 
 interface AdminDashboardProps {
   tools: Tool[];
@@ -93,9 +94,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Manage State
   const [manageTab, setManageTab] = useState<'tools' | 'news'>('tools');
-  
+
   // Delete Modal State
   const [deleteTarget, setDeleteTarget] = useState<{ id: string, name: string, type: 'tool' | 'news' } | null>(null);
+
+  // News Scraper Modal State
+  const [isScraperModalOpen, setIsScraperModalOpen] = useState(false);
 
   // Tool Categories Definition
   const toolCategories = [
@@ -868,6 +872,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   };
 
+  const handleImportScrapedNews = async (articles: NewsArticle[]) => {
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const article of articles) {
+      try {
+        await onAddNews(article);
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        console.error('Failed to import article:', error);
+      }
+    }
+
+    if (errorCount > 0) {
+      alert(`Imported ${successCount} articles. ${errorCount} failed.`);
+    }
+  };
+
   const handleAnalyze = async () => {
     setAnalyzing(true);
     setAnalysisReport('');
@@ -1563,11 +1586,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                  <h3 className="text-lg font-medium text-white">
                      {editingId ? 'Edit News Article' : 'Publish News Article'}
                  </h3>
-                 {editingId && (
+                 <div className="flex items-center gap-2">
+                   {!editingId && (
+                     <button
+                       type="button"
+                       onClick={() => setIsScraperModalOpen(true)}
+                       className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg hover:shadow-xl"
+                     >
+                       <Globe className="w-4 h-4" />
+                       <span className="hidden sm:inline">Scrape Real News</span>
+                       <span className="sm:hidden">Scrape</span>
+                     </button>
+                   )}
+                   {editingId && (
                      <button onClick={resetNewsForm} className="text-zinc-500 hover:text-zinc-300 text-sm flex items-center gap-1">
                          <ArrowLeft className="w-4 h-4" /> Cancel Edit
                      </button>
-                 )}
+                   )}
+                 </div>
              </div>
 
              <div className="bg-gradient-to-br from-purple-950/50 to-indigo-950/30 border border-purple-800/50 rounded-xl p-5 mb-5">
@@ -1942,12 +1978,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
        )}
 
        {/* --- Delete Confirmation Modal --- */}
-       <DeleteConfirmationModal 
+       <DeleteConfirmationModal
          isOpen={!!deleteTarget}
          onClose={() => setDeleteTarget(null)}
          onConfirm={handleConfirmDelete}
          itemName={deleteTarget?.name || ''}
          itemType={deleteTarget?.type || 'tool'}
+       />
+
+       {/* --- News Scraper Modal --- */}
+       <NewsScraperModal
+         isOpen={isScraperModalOpen}
+         onClose={() => setIsScraperModalOpen(false)}
+         onImportArticles={handleImportScrapedNews}
        />
     </div>
   );

@@ -492,6 +492,39 @@ Keep it natural, conversational, and enthusiastic.`;
         return res.json(JSON.parse(response.choices[0].message.content || "{}"));
       }
 
+      case 'scrapeRealNews': {
+        const { category, count } = payload;
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{
+            role: 'user',
+            content: `Find and provide ${count} recent, REAL news articles about ${category} from the past 24-48 hours.
+
+IMPORTANT: These MUST be actual, current news stories that are happening now or very recently. Include:
+- Real company names, people, dates, and specific facts
+- Actual events that can be verified
+- Current developments in ${category}
+
+For each article, provide:
+- A compelling, accurate title
+- A 2-3 sentence summary
+- Full article content (4-5 paragraphs, approximately 400-500 words with real details and facts)
+- Source (use real news outlet names like TechCrunch, The Verge, Reuters, etc.)
+- 3-5 relevant tags
+
+Make sure these are REAL stories, not fictional examples. Include actual dates, company names, product names, and verifiable facts.`
+          }],
+          response_format: { type: "json_object" },
+          temperature: 0.7
+        });
+
+        const content = response.choices[0].message.content || '{"articles":[]}';
+        const data = JSON.parse(content);
+
+        return res.json(data);
+      }
+
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }
