@@ -499,21 +499,28 @@ Keep it natural, conversational, and enthusiastic.`;
           model: 'gpt-4o',
           messages: [{
             role: 'user',
-            content: `Find and provide ${count} recent, REAL news articles about ${category} from the past 24-48 hours.
+            content: `You are a news aggregator. Find and provide ${count} recent, REAL news articles about ${category} from the past 24-48 hours.
 
 IMPORTANT: These MUST be actual, current news stories that are happening now or very recently. Include:
 - Real company names, people, dates, and specific facts
 - Actual events that can be verified
 - Current developments in ${category}
 
-For each article, provide:
-- A compelling, accurate title
-- A 2-3 sentence summary
-- Full article content (4-5 paragraphs, approximately 400-500 words with real details and facts)
-- Source (use real news outlet names like TechCrunch, The Verge, Reuters, etc.)
-- 3-5 relevant tags
+Return a JSON object with this EXACT structure:
+{
+  "articles": [
+    {
+      "title": "Article title here",
+      "summary": "2-3 sentence summary",
+      "description": "2-3 sentence summary (same as summary)",
+      "content": "Full article content (4-5 paragraphs, 400-500 words with real details)",
+      "source": "Real news outlet name (TechCrunch, The Verge, Reuters, etc.)",
+      "tags": ["tag1", "tag2", "tag3"]
+    }
+  ]
+}
 
-Make sure these are REAL stories, not fictional examples. Include actual dates, company names, product names, and verifiable facts.`
+Make sure these are REAL stories from real news sources with actual dates, company names, product names, and verifiable facts.`
           }],
           response_format: { type: "json_object" },
           temperature: 0.7
