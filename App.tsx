@@ -30,6 +30,7 @@ import {
 import { Menu, Search, AlertCircle, Star, Zap, TrendingUp, Layers, Sparkles } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './services/supabase';
 import { getCurrentUserProfile, signOut } from './services/authService';
+import { logger } from './utils/logger';
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -136,7 +137,7 @@ const App: React.FC = () => {
 
         // Listen for Auth changes (Login/Logout)
         const { data } = supabase!.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth event:', event);
+          logger.log('Auth event:', event);
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
             const profile = await getCurrentUserProfile();
@@ -162,7 +163,7 @@ const App: React.FC = () => {
         });
 
       } catch (error) {
-        console.error('Error initializing app:', error);
+        logger.error('Error initializing app:', error);
       }
     };
 
@@ -200,7 +201,7 @@ const App: React.FC = () => {
       const newTools = await generateDirectoryTools();
       setTools((prev: Tool[]) => [...prev, ...newTools]);
     } catch (e) {
-      console.error("Failed to load tools", e);
+      logger.error("Failed to load tools", e);
     }
   };
 
@@ -214,7 +215,7 @@ const App: React.FC = () => {
           await signOut();
           setFavoriteIds([]); // Clear favorites on logout
       } catch (e) {
-          console.error("Logout failed", e);
+          logger.error("Logout failed", e);
       }
   };
 
@@ -252,7 +253,7 @@ const App: React.FC = () => {
         }
       }
     } catch (e: any) {
-      console.error("Error toggling favorite:", e);
+      logger.error("Error toggling favorite:", e);
       alert(`Failed to ${favoriteIds.includes(toolId) ? 'remove' : 'add'} favorite: ${e.message}`);
     }
   };
@@ -315,12 +316,12 @@ const App: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log('✅ Tool added via admin API:', result);
+            logger.log('✅ Tool added via admin API:', result);
         } else {
             setTools((prev: Tool[]) => [tool, ...prev]);
         }
     } catch (e: any) {
-        console.error("Error adding tool", e);
+        logger.error("Error adding tool", e);
         alert(`Failed to save tool: ${e.message}`);
         throw e; // Re-throw so AdminDashboard can handle it
     }
@@ -342,24 +343,24 @@ const App: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log('✅ Tool updated via admin API:', result);
+            logger.log('✅ Tool updated via admin API:', result);
         } else {
             setTools((prev: Tool[]) => prev.map((t: Tool) => t.id === id ? { ...tool, id } : t));
         }
     } catch (e: any) {
-        console.error("Error updating tool", e);
+        logger.error("Error updating tool", e);
         alert(`Failed to update tool: ${e.message}`);
         throw e; // Re-throw so AdminDashboard can handle it
     }
   };
 
   const handleAddNews = async (article: NewsArticle) => {
-    console.log('handleAddNews called with:', article);
-    console.log('isSupabaseConfigured:', isSupabaseConfigured);
+    logger.log('handleAddNews called with:', article);
+    logger.log('isSupabaseConfigured:', isSupabaseConfigured);
 
     try {
         if (isSupabaseConfigured) {
-            console.log('Attempting to save news to Supabase...');
+            logger.log('Attempting to save news to Supabase...');
             // Use admin API endpoint with service role key
             const response = await fetch('/api/admin', {
                 method: 'POST',
@@ -373,14 +374,14 @@ const App: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log('✅ News added via admin API:', result);
+            logger.log('✅ News added via admin API:', result);
         } else {
-            console.log('Supabase not configured, saving to local state');
+            logger.log('Supabase not configured, saving to local state');
             setNews((prev: NewsArticle[]) => [article, ...prev]);
         }
         navigate('/news');
     } catch (e: any) {
-        console.error("Error adding news", e);
+        logger.error("Error adding news", e);
         alert(`Failed to save news: ${e.message}`);
         throw e; // Re-throw so AdminDashboard can handle it
     }
@@ -402,19 +403,19 @@ const App: React.FC = () => {
             }
 
             const result = await response.json();
-            console.log('✅ News updated via admin API:', result);
+            logger.log('✅ News updated via admin API:', result);
         } else {
             setNews((prev: NewsArticle[]) => prev.map((n: NewsArticle) => n.id === id ? { ...article, id } : n));
         }
     } catch (e: any) {
-        console.error("Error updating news", e);
+        logger.error("Error updating news", e);
         alert(`Failed to update news: ${e.message}`);
         throw e; // Re-throw so AdminDashboard can handle it
     }
   };
   
   const handleDeleteTool = async (id: string) => {
-    console.log("Deleting tool:", id);
+    logger.log("Deleting tool:", id);
     // Note: Confirmation UI is now handled in AdminDashboard via Modal
 
     if (isSupabaseConfigured) {
@@ -431,9 +432,9 @@ const App: React.FC = () => {
                 throw new Error(error.error || 'Failed to delete tool');
             }
 
-            console.log('✅ Tool deleted via admin API');
+            logger.log('✅ Tool deleted via admin API');
         } catch (error: any) {
-            console.error("Delete failed:", error);
+            logger.error("Delete failed:", error);
             alert(`Failed to delete tool from database: ${error.message}.`);
             throw error; // Re-throw so AdminDashboard can handle it
         }
@@ -444,7 +445,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteNews = async (id: string) => {
-    console.log("Deleting news:", id);
+    logger.log("Deleting news:", id);
     // Note: Confirmation UI is now handled in AdminDashboard via Modal
 
     if (isSupabaseConfigured) {
@@ -461,9 +462,9 @@ const App: React.FC = () => {
                 throw new Error(error.error || 'Failed to delete news');
             }
 
-            console.log('✅ News deleted via admin API');
+            logger.log('✅ News deleted via admin API');
         } catch (error: any) {
-            console.error("Delete failed:", error);
+            logger.error("Delete failed:", error);
             alert(`Failed to delete article from database: ${error.message}.`);
             throw error; // Re-throw so AdminDashboard can handle it
         }
