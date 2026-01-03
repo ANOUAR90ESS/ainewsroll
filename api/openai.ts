@@ -1,13 +1,13 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI, Type } from '@google/genai';
+import OpenAI from 'openai';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
 const getClient = () => {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY environment variable is not configured. Please set it in Vercel project settings.');
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is not configured. Please set it in Vercel project settings.');
   }
-  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  return new OpenAI({ apiKey: OPENAI_API_KEY });
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -18,69 +18,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action, payload } = req.body;
 
   try {
-    const ai = getClient();
+    const openai = getClient();
 
     switch (action) {
       case 'chat': {
         const { message, history } = payload;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [
-            ...history.map((h: any) => ({
-              role: h.role,
-              parts: [{ text: h.parts[0].text }]
-            })),
-            { role: 'user', parts: [{ text: message }] }
-          ]
+        const messages = [
+          ...history.map((h: any) => ({
+            role: h.role,
+            content: h.parts[0].text
+          })),
+          { role: 'user', content: message }
+        ];
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: messages
         });
-        return res.json({ text: response.text });
+
+        return res.json({ text: response.choices[0].message.content });
       }
 
       case 'generateToolSlides': {
         const { tool } = payload;
-        const prompt = `Create a 4-slide presentation about the AI tool "${tool.name}". 
-Description: ${tool.description}. 
+        const prompt = `Create a 4-slide presentation about the AI tool "${tool.name}".
+Description: ${tool.description}.
 Category: ${tool.category}.
-Return JSON array of slides.`;
+Return JSON array of slides with this structure: [{"title": "string", "content": ["string"]}]`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  content: { type: Type.ARRAY, items: { type: Type.STRING } }
-                }
-              }
-            }
-          }
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json({ slides: JSON.parse(response.text || "[]") });
+
+        const result = JSON.parse(response.choices[0].message.content || '{"slides":[]}');
+        return res.json({ slides: result.slides || [] });
       }
 
       case 'generateImage': {
-        const { prompt, aspectRatio = '16:9', size = '1K' } = payload;
+        const { prompt, aspectRatio = '16:9', size = '1024x1024' } = payload;
 
         try {
-          // Use Imagen 3 via generateContent API
-          const imageResponse = await ai.models.generateContent({
-            model: 'imagen-3.0-generate-001',
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            config: {
-              responseModalities: ['image']
-            }
+          // Map aspect ratio to DALL-E sizes
+          let imageSize: "1024x1024" | "1792x1024" | "1024x1792" = "1024x1024";
+          if (aspectRatio === '16:9') {
+            imageSize = "1792x1024";
+          } else if (aspectRatio === '9:16') {
+            imageSize = "1024x1792";
+          }
+
+          const imageResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            size: imageSize,
+            quality: "standard",
+            n: 1,
           });
 
-          // Check if image was generated
-          const imagePart = imageResponse?.candidates?.[0]?.content?.parts?.[0];
-          
-          if (imagePart?.inlineData) {
-            console.log('✅ Imagen 3 generated image successfully');
+          const imageUrl = imageResponse.data[0].url;
+
+          if (imageUrl) {
+            console.log('✅ DALL-E 3 generated image successfully');
             return res.json({
               candidates: [
                 {
@@ -88,8 +87,8 @@ Return JSON array of slides.`;
                     parts: [
                       {
                         inlineData: {
-                          data: imagePart.inlineData.data,
-                          mimeType: imagePart.inlineData.mimeType || 'image/png'
+                          data: imageUrl,
+                          mimeType: 'text/url'
                         }
                       }
                     ]
@@ -99,9 +98,9 @@ Return JSON array of slides.`;
             });
           }
 
-          throw new Error('No image data in Imagen response');
+          throw new Error('No image URL in DALL-E response');
         } catch (error: any) {
-          console.error('⚠️ Imagen 3 failed, using category-based fallback:', error.message);
+          console.error('⚠️ DALL-E 3 failed, using category-based fallback:', error.message);
 
           // Category-based fallback images (high quality Unsplash)
           const categoryImages: Record<string, string[]> = {
@@ -172,12 +171,10 @@ Return JSON array of slides.`;
             ]
           };
 
-          // Get random image from category or default
           let fallbackImage = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
-          
+
           for (const [category, images] of Object.entries(categoryImages)) {
             if (prompt.toLowerCase().includes(category.toLowerCase())) {
-              // Use hash of prompt to get consistent but different image
               const hash = prompt
                 .split('')
                 .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
@@ -193,11 +190,11 @@ Return JSON array of slides.`;
               {
                 content: {
                   parts: [
-                    { 
-                      inlineData: { 
-                        data: fallbackImage, 
-                        mimeType: 'text/url' 
-                      } 
+                    {
+                      inlineData: {
+                        data: fallbackImage,
+                        mimeType: 'text/url'
+                      }
                     }
                   ]
                 }
@@ -211,44 +208,30 @@ Return JSON array of slides.`;
         const { tools } = payload;
         const toolNames = tools.map((t: any) => t.name).join(', ');
         const prompt = `Analyze AI tool trends based on: ${toolNames}. Provide 3 key insights.`;
-        
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }]
         });
-        return res.json({ analysis: response.text });
+
+        return res.json({ analysis: response.choices[0].message.content });
       }
 
       case 'generateDirectoryTools': {
         const { count = 9, category } = payload;
-        
+
         const categoryFilter = category ? ` focused on the ${category} category` : ' across diverse categories (Writing, Image, Video, Audio, Coding, Business, Data Analysis, Healthcare, Education)';
-        
-        const prompt = `Generate ${count} unique and diverse AI tools${categoryFilter}. Each tool must be COMPLETELY DIFFERENT with distinct names, purposes, and descriptions. Return JSON array with ${count} tools.`;
-        
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  description: { type: Type.STRING },
-                  category: { type: Type.STRING },
-                  tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  price: { type: Type.STRING },
-                  imageUrl: { type: Type.STRING },
-                  website: { type: Type.STRING }
-                }
-              }
-            }
-          }
+
+        const prompt = `Generate ${count} unique and diverse AI tools${categoryFilter}. Each tool must be COMPLETELY DIFFERENT with distinct names, purposes, and descriptions. Return a JSON object with a "tools" array containing ${count} tools. Each tool should have: name, description, category, tags (array), price, imageUrl, website.`;
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json({ tools: JSON.parse(response.text || "[]") });
+
+        const result = JSON.parse(response.choices[0].message.content || '{"tools":[]}');
+        return res.json({ tools: result.tools || [] });
       }
 
       case 'extractToolFromRSS': {
@@ -257,26 +240,15 @@ Return JSON array of slides.`;
 Title: ${title}
 Description: ${description}
 
-Return a JSON object with: name, description, category, tags, price`;
+Return a JSON object with: name, description, category, tags (array), price`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                description: { type: Type.STRING },
-                category: { type: Type.STRING },
-                tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                price: { type: Type.STRING }
-              }
-            }
-          }
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json({ tool: JSON.parse(response.text || "{}") });
+
+        return res.json({ tool: JSON.parse(response.choices[0].message.content || "{}") });
       }
 
       case 'extractNewsFromRSS': {
@@ -287,22 +259,13 @@ Description: ${description}
 
 Return a JSON object with: title, description, content`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                content: { type: Type.STRING }
-              }
-            }
-          }
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json({ article: JSON.parse(response.text || "{}") });
+
+        return res.json({ article: JSON.parse(response.choices[0].message.content || "{}") });
       }
 
       case 'generateNewsFromTopic': {
@@ -341,25 +304,13 @@ Context headlines:\n${headlines || 'No external context available, rely on gener
 
 Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), content (3-5 short paragraphs, Markdown OK), source (string), category (string).`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                description: { type: Type.STRING },
-                content: { type: Type.STRING },
-                source: { type: Type.STRING },
-                category: { type: Type.STRING }
-              }
-            }
-          }
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
 
-        const article = JSON.parse(response.text || "{}");
+        const article = JSON.parse(response.choices[0].message.content || "{}");
         return res.json({
           article: {
             ...article,
@@ -374,20 +325,21 @@ Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), co
         const { prompt } = payload;
 
         try {
-          // Use Gemini to extract better keywords for image search
-          const keywordResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: `Extract 2-3 descriptive keywords for finding a relevant stock photo based on this edit request: "${prompt}". Return only comma-separated keywords, no explanation.`
+          const keywordResponse = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{
+              role: 'user',
+              content: `Extract 2-3 descriptive keywords for finding a relevant stock photo based on this edit request: "${prompt}". Return only comma-separated keywords, no explanation.`
+            }]
           });
 
-          const keywords = (keywordResponse.text || prompt)
+          const keywords = (keywordResponse.choices[0].message.content || prompt)
             .replace(/[^a-zA-Z0-9,\s]/g, '')
             .split(/[,\s]+/)
             .filter(Boolean)
             .slice(0, 3)
             .join(',');
 
-          // Use Unsplash with enhanced keywords
           const imageUrl = `https://source.unsplash.com/1200x630/?${keywords || 'technology'}`;
 
           return res.json({
@@ -421,95 +373,130 @@ Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), co
 
       case 'transcribeAudio': {
         const { audioBase64 } = payload;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: {
-            parts: [
-              { inlineData: { mimeType: 'audio/wav', data: audioBase64 } },
-              { text: "Transcribe this audio exactly." }
-            ]
-          }
+
+        // Convert base64 to buffer
+        const audioBuffer = Buffer.from(audioBase64, 'base64');
+
+        // Create a File-like object for OpenAI
+        const audioFile = new File([audioBuffer], 'audio.wav', { type: 'audio/wav' });
+
+        const response = await openai.audio.transcriptions.create({
+          file: audioFile,
+          model: 'whisper-1',
         });
+
         return res.json({ text: response.text || '' });
       }
 
       case 'generateSpeech': {
-        return res.json({ audioData: null, message: 'Audio generation not yet supported' });
+        const { text, voice = 'alloy' } = payload;
+
+        // Map voice names from Gemini to OpenAI
+        const voiceMap: Record<string, any> = {
+          'Kore': 'alloy',
+          'Charon': 'echo',
+          'Kore-2': 'fable',
+          'Fenrir': 'onyx',
+          'Aoede': 'nova',
+          'Puck': 'shimmer'
+        };
+
+        const openaiVoice = voiceMap[voice] || 'alloy';
+
+        const mp3 = await openai.audio.speech.create({
+          model: "tts-1",
+          voice: openaiVoice,
+          input: text,
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        const audioData = buffer.toString('base64');
+
+        return res.json({ audioData });
       }
 
       case 'generateConversationScript': {
         const { topic, speaker1, speaker2 } = payload;
-        const prompt = `Write a short, engaging podcast dialogue (approx 150 words) between two hosts, ${speaker1} and ${speaker2}, discussing the topic: "${topic}". 
-    Format it exactly like this:
-    ${speaker1}: [Text]
-    ${speaker2}: [Text]
-    Keep it natural, conversational, and enthusiastic.`;
+        const prompt = `Write a short, engaging podcast dialogue (approx 150 words) between two hosts, ${speaker1} and ${speaker2}, discussing the topic: "${topic}".
+Format it exactly like this:
+${speaker1}: [Text]
+${speaker2}: [Text]
+Keep it natural, conversational, and enthusiastic.`;
 
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }]
         });
-        return res.json({ text: response.text || '' });
+
+        return res.json({ text: response.choices[0].message.content || '' });
       }
 
       case 'generateMultiSpeakerSpeech': {
-        return res.json({ audioData: null, message: 'Audio generation not yet supported' });
+        const { script, speaker1Config, speaker2Config } = payload;
+
+        // Parse the script to separate speakers
+        const lines = script.split('\n').filter((line: string) => line.trim());
+        const audioSegments: string[] = [];
+
+        for (const line of lines) {
+          let voice = 'alloy';
+          let text = line;
+
+          if (line.includes(`${speaker1Config.name}:`)) {
+            text = line.split(':')[1]?.trim() || '';
+            voice = speaker1Config.voice || 'alloy';
+          } else if (line.includes(`${speaker2Config.name}:`)) {
+            text = line.split(':')[1]?.trim() || '';
+            voice = speaker2Config.voice || 'echo';
+          }
+
+          if (text) {
+            const mp3 = await openai.audio.speech.create({
+              model: "tts-1",
+              voice: voice as any,
+              input: text,
+            });
+
+            const buffer = Buffer.from(await mp3.arrayBuffer());
+            audioSegments.push(buffer.toString('base64'));
+          }
+        }
+
+        // Combine all segments (simplified - in production you'd want proper audio merging)
+        const combinedAudio = audioSegments.join(',');
+
+        return res.json({ audioData: combinedAudio });
       }
 
       case 'generateToolFromTopic': {
         const { topic, prompt } = payload;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                description: { type: Type.STRING },
-                category: { type: Type.STRING },
-                price: { type: Type.STRING },
-                tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-                website: { type: Type.STRING },
-                how_to_use: { type: Type.STRING },
-                features_detailed: { type: Type.STRING },
-                use_cases: { type: Type.STRING },
-                pros_cons: { type: Type.STRING }
-              }
-            }
-          }
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json(JSON.parse(response.text || "{}"));
+
+        return res.json(JSON.parse(response.choices[0].message.content || "{}"));
       }
 
       case 'enrichToolDetails': {
         const { toolName, prompt } = payload;
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                how_to_use: { type: Type.STRING },
-                features_detailed: { type: Type.STRING },
-                use_cases: { type: Type.STRING },
-                pros_cons: { type: Type.STRING },
-                screenshots_urls: { type: Type.ARRAY, items: { type: Type.STRING } }
-              }
-            }
-          }
+
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" }
         });
-        return res.json(JSON.parse(response.text || "{}"));
+
+        return res.json(JSON.parse(response.choices[0].message.content || "{}"));
       }
 
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }
   } catch (error: any) {
-    console.error('Gemini API error:', error);
+    console.error('OpenAI API error:', error);
     return res.status(500).json({ error: error.message || 'Failed to process request' });
   }
 }

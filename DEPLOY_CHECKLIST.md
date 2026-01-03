@@ -10,7 +10,7 @@ Tu proyecto está configurado de forma SEGURA para deploy:
 - `.env.example` creado (sin claves reales) ✓
 
 ### 2. ✅ API Keys Protegidas
-- `GEMINI_API_KEY` NO se expone en el código público ✓
+- `OPENAI_API_KEY` NO se expone en el código público ✓
 - `vite.config.ts` solo expone variables VITE_* seguras ✓
 - Sin claves hardcodeadas en el código ✓
 
@@ -21,13 +21,13 @@ Tu proyecto está configurado de forma SEGURA para deploy:
 │  CLIENTE (Browser)                              │
 │  - Solo accede a VITE_SUPABASE_URL              │
 │  - Solo accede a VITE_SUPABASE_ANON_KEY         │
-│  - Llama a /api/gemini (serverless)             │
-│  ❌ NO tiene acceso directo a GEMINI_API_KEY    │
+│  - Llama a /api/openai (serverless)             │
+│  ❌ NO tiene acceso directo a OPENAI_API_KEY    │
 └─────────────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────────────┐
 │  SERVIDOR (Vercel Functions /api)               │
-│  - api/gemini.ts usa GEMINI_API_KEY             │
+│  - api/openai.ts usa OPENAI_API_KEY             │
 │  - Variables de entorno de Vercel               │
 │  - Procesa requests de forma segura             │
 │  ✅ Keys solo en servidor                       │
@@ -44,7 +44,7 @@ Agrega estas variables:
 
 ```bash
 # OBLIGATORIAS
-GEMINI_API_KEY=AIzaSy... (tu key real)
+OPENAI_API_KEY=sk-proj-... (tu key real)
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci... (tu key real)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci... (tu key real)
@@ -85,15 +85,15 @@ Vercel detectará el push y desplegará automáticamente usando las variables de
 ## 🚨 IMPORTANTE - NO HAGAS ESTO
 
 ❌ NO subas `.env` a GitHub
-❌ NO expongas `GEMINI_API_KEY` en el código del cliente
-❌ NO uses `VITE_GEMINI_API_KEY` (se expone públicamente)
+❌ NO expongas `OPENAI_API_KEY` en el código del cliente
+❌ NO uses `VITE_OPENAI_API_KEY` (se expone públicamente)
 ❌ NO compartas tus API keys en capturas de pantalla o logs
 
 ## ✅ ESTO ES SEGURO
 
 ✅ Usar `.env` solo localmente
 ✅ Configurar variables en Vercel Dashboard
-✅ Acceder a Gemini solo desde `/api/gemini.ts`
+✅ Acceder a OpenAI solo desde `/api/openai.ts`
 ✅ Usar `VITE_*` solo para variables públicas seguras (URLs, IDs públicos)
 
 ## 🛠️ Si Algo Sale Mal
@@ -107,16 +107,16 @@ git commit -m "Remove .env from repository"
 git push origin main
 
 # 2. CRÍTICO: Regenerar TODAS las API keys
-# - Nueva Gemini API: https://aistudio.google.com/app/apikey
+# - Nueva OpenAI API: https://platform.openai.com/api-keys
 # - Nuevo Supabase key: Dashboard → Settings → API
 ```
 
 ### Si ves tu API key en el código público:
 
 1. Ve a Vercel → Settings → Environment Variables
-2. Asegúrate que `GEMINI_API_KEY` esté ahí (sin el prefijo VITE_)
-3. Verifica que `vite.config.ts` NO tenga `GEMINI_API_KEY` en `define`
-4. Regenera la API key en Google AI Studio
+2. Asegúrate que `OPENAI_API_KEY` esté ahí (sin el prefijo VITE_)
+3. Verifica que `vite.config.ts` NO tenga `OPENAI_API_KEY` en `define`
+4. Regenera la API key en OpenAI Platform
 5. Redeploy en Vercel
 
 ## 📚 Documentación Adicional

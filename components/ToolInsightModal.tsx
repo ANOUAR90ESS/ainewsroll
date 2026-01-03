@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, Slide } from '../types';
 import { X, FileText, MonitorPlay, Loader2 } from 'lucide-react';
-import { generateToolSlides } from '../services/geminiService';
+import { generateToolSlides } from '../services/openaiService';
 
 interface ToolInsightModalProps {
   tool: Tool;

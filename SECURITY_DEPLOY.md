@@ -28,7 +28,7 @@ El archivo `.gitignore` debe contener:
 En **Vercel Dashboard** → **Project Settings** → **Environment Variables**, agrega:
 
 #### 🟢 Variables para PRODUCTION:
-- `GEMINI_API_KEY` = tu-api-key-de-gemini
+- `OPENAI_API_KEY` = tu-api-key-de-gemini
 - `SUPABASE_SERVICE_ROLE_KEY` = tu-service-role-key
 - `VITE_SUPABASE_URL` = https://tu-proyecto.supabase.co
 - `VITE_SUPABASE_ANON_KEY` = tu-anon-key
@@ -54,7 +54,7 @@ En **Vercel Dashboard** → **Project Settings** → **Environment Variables**, 
 
 ### 6. 🔒 Verificación de Seguridad
 
-#### Verifica que GEMINI_API_KEY NO esté en el código público:
+#### Verifica que OPENAI_API_KEY NO esté en el código público:
 
 ```bash
 # Buscar en el código compilado (después de build):
@@ -63,7 +63,7 @@ npm run build
 ```
 
 #### El archivo `vite.config.ts` ahora es seguro:
-- ❌ REMOVIDO: `GEMINI_API_KEY` del bundle público
+- ❌ REMOVIDO: `OPENAI_API_KEY` del bundle público
 - ✅ SOLO expone: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (seguros)
 
 ### 7. 📝 Comandos para Deploy Seguro
@@ -97,7 +97,7 @@ git commit -m "Remove .env from repository"
 git push origin main
 
 # 4. CRÍTICO: Regenerar TODAS las API keys porque ya están comprometidas
-# - Nueva API key de Gemini: https://aistudio.google.com/app/apikey
+# - Nueva API key de OpenAI: https://platform.openai.com/api-keys
 # - Nuevo service role key de Supabase: https://supabase.com/dashboard
 ```
 
@@ -106,7 +106,7 @@ git push origin main
 - [ ] `.env` está en `.gitignore`
 - [ ] `.env` NO aparece en `git status`
 - [ ] Variables configuradas en Vercel Dashboard
-- [ ] `vite.config.ts` NO expone `GEMINI_API_KEY`
+- [ ] `vite.config.ts` NO expone `OPENAI_API_KEY`
 - [ ] Probado localmente con `npm run dev`
 - [ ] Build funciona con `npm run build`
 - [ ] No hay errores en consola
@@ -115,11 +115,11 @@ git push origin main
 
 ### Cliente (Browser):
 - ✅ Accede a Supabase con `VITE_SUPABASE_ANON_KEY` (limitada)
-- ✅ Llama a `/api/gemini` (serverless function)
-- ❌ NO tiene acceso directo a `GEMINI_API_KEY`
+- ✅ Llama a `/api/openai` (serverless function)
+- ❌ NO tiene acceso directo a `OPENAI_API_KEY`
 
 ### Servidor (Vercel Functions):
-- ✅ `api/gemini.ts` usa `GEMINI_API_KEY` de variables de entorno
+- ✅ `api/openai.ts` usa `OPENAI_API_KEY` de variables de entorno
 - ✅ Procesa requests del cliente de forma segura
 - ✅ Retorna solo resultados, nunca claves
 
@@ -127,4 +127,4 @@ git push origin main
 
 - [Vercel Environment Variables](https://vercel.com/docs/environment-variables)
 - [Supabase Security](https://supabase.com/docs/guides/auth)
-- [Gemini API Security](https://ai.google.dev/gemini-api/docs/api-key)
+- [OpenAI API Security](https://platform.openai.com/docs/api-reference/authentication)

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { transcribeAudio, generateSpeech, generateConversationScript, generateMultiSpeakerSpeech } from '../../services/geminiService';
+import { transcribeAudio, generateSpeech, generateConversationScript, generateMultiSpeakerSpeech } from '../../services/openaiService';
 import { Mic, Play, Activity, ChevronDown, Sliders, Users, Music, StopCircle, RefreshCw, Wand2 } from 'lucide-react';
 import { arrayBufferToBase64 } from '../../services/audioUtils';
 

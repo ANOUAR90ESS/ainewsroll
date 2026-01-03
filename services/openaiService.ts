@@ -1,25 +1,25 @@
 import { Tool, Slide, NewsArticle } from "../types";
 
-// API endpoint for secure Gemini calls
+// API endpoint for secure OpenAI calls
 // Use local development server if in dev mode, otherwise use Vercel API routes
 const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
-const GEMINI_API = isDevelopment
-  ? 'http://localhost:3001/api/gemini'
-  : '/api/gemini';
+const OPENAI_API = isDevelopment
+  ? 'http://localhost:3001/api/openai'
+  : '/api/openai';
 
 console.log(`🔧 API Mode: ${isDevelopment ? 'Development' : 'Production'}`);
-console.log(`📡 API Endpoint: ${GEMINI_API}`);
+console.log(`📡 API Endpoint: ${OPENAI_API}`);
 
 // Helper function to call backend API
-const callGeminiAPI = async (action: string, payload: any) => {
-  const response = await fetch(GEMINI_API, {
+const callOpenAIAPI = async (action: string, payload: any) => {
+  const response = await fetch(OPENAI_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, payload })
   });
 
   if (!response.ok) {
-    let errorMessage = 'Gemini API request failed';
+    let errorMessage = 'OpenAI API request failed';
     try {
       const error = await response.json();
       errorMessage = error.error || errorMessage;
@@ -39,7 +39,7 @@ const callGeminiAPI = async (action: string, payload: any) => {
 
 // --- Directory Generation ---
 export const generateDirectoryTools = async (count: number = 9, category?: string): Promise<Tool[]> => {
-  const data = await callGeminiAPI('generateDirectoryTools', { count, category });
+  const data = await callOpenAIAPI('generateDirectoryTools', { count, category });
   const tools = data.tools || [];
 
   console.log(`🎨 Generating AI images for ${tools.length} tools...`);
@@ -169,7 +169,7 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
 
       try {
         // Try to generate AI image with Gemini Imagen
-        const imageData = await callGeminiAPI('generateImage', {
+        const imageData = await callOpenAIAPI('generateImage', {
           prompt: imagePrompt,
           aspectRatio: '16:9',
           size: '1K'
@@ -291,60 +291,60 @@ export const pollVideoOperation = async (operation: any): Promise<any> => {
 
 // --- Image Studio (Gen & Edit) ---
 export const editImage = async (prompt: string, imageBase64: string) => {
-  const data = await callGeminiAPI('editImage', { prompt, imageBase64 });
+  const data = await callOpenAIAPI('editImage', { prompt, imageBase64 });
   return data;
 };
 
 // --- Audio Transcription & TTS ---
 export const transcribeAudio = async (audioBase64: string) => {
-  const data = await callGeminiAPI('transcribeAudio', { audioBase64 });
+  const data = await callOpenAIAPI('transcribeAudio', { audioBase64 });
   return data.text || '';
 };
 
 export const generateSpeech = async (text: string, voice: string = 'Kore') => {
-  const data = await callGeminiAPI('generateSpeech', { text, voice });
+  const data = await callOpenAIAPI('generateSpeech', { text, voice });
   return { audioData: data.audioData };
 };
 
 export const generateConversationScript = async (topic: string, speaker1: string, speaker2: string) => {
-  const data = await callGeminiAPI('generateConversationScript', { topic, speaker1, speaker2 });
+  const data = await callOpenAIAPI('generateConversationScript', { topic, speaker1, speaker2 });
   return data.text || '';
 };
 
 export const generateMultiSpeakerSpeech = async (script: string, speaker1Config: {name: string, voice: string}, speaker2Config: {name: string, voice: string}) => {
-  const data = await callGeminiAPI('generateMultiSpeakerSpeech', { script, speaker1Config, speaker2Config });
+  const data = await callOpenAIAPI('generateMultiSpeakerSpeech', { script, speaker1Config, speaker2Config });
   return { audioData: data.audioData };
 };
 
 // --- Admin & Tool Insights ---
 
 export const extractToolFromRSSItem = async (title: string, description: string): Promise<Partial<Tool>> => {
-  const data = await callGeminiAPI('extractToolFromRSS', { title, description });
+  const data = await callOpenAIAPI('extractToolFromRSS', { title, description });
   return data.tool || {};
 };
 
 export const extractNewsFromRSSItem = async (title: string, description: string): Promise<Partial<NewsArticle>> => {
-  const data = await callGeminiAPI('extractNewsFromRSS', { title, description });
+  const data = await callOpenAIAPI('extractNewsFromRSS', { title, description });
   return data.article || {};
 };
 
 export const generateNewsFromTopic = async (topic: string): Promise<NewsArticle> => {
-  const data = await callGeminiAPI('generateNewsFromTopic', { topic });
+  const data = await callOpenAIAPI('generateNewsFromTopic', { topic });
   return data.article || {} as NewsArticle;
 };
 
 export const generateToolSlides = async (tool: Tool): Promise<Slide[]> => {
-  const data = await callGeminiAPI('generateToolSlides', { tool });
+  const data = await callOpenAIAPI('generateToolSlides', { tool });
   return data.slides || [];
 };
 
 export const generateImage = async (prompt: string, aspectRatio?: string, size?: string) => {
-  const data = await callGeminiAPI('generateImage', { prompt, aspectRatio, size });
+  const data = await callOpenAIAPI('generateImage', { prompt, aspectRatio, size });
   return data;
 };
 
 export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
-  const data = await callGeminiAPI('analyzeToolTrends', { tools });
+  const data = await callOpenAIAPI('analyzeToolTrends', { tools });
   return data.analysis || "Unable to generate analysis.";
 };
 
@@ -359,7 +359,7 @@ export const generateImageForTool = async (toolName: string, toolDescription: st
     const imagePrompt = `Create a ${randomStyle} for "${toolName}" - a ${category} AI tool. EXACT FUNCTIONALITY: ${toolDescription}. Show the SPECIFIC features described: ${toolDescription}. Make it visually distinct and unique. High-quality, tech-focused, vibrant colors. UNIQUE SEED: ${uniqueSeed}. IMPORTANT: This must look completely different from other ${category} tools.`;
 
     // Generate image with Gemini
-    const imageData = await callGeminiAPI('generateImage', {
+    const imageData = await callOpenAIAPI('generateImage', {
       prompt: imagePrompt,
       aspectRatio: '16:9',
       size: '1K'
@@ -413,7 +413,7 @@ Research and provide:
 Return as JSON with keys: name, description, category, price, tags (array), website, how_to_use, features_detailed, use_cases, pros_cons.
 Be specific and realistic. If "${topic}" is a real tool name, use accurate information.`;
 
-    const data = await callGeminiAPI('generateToolFromTopic', { topic, prompt });
+    const data = await callOpenAIAPI('generateToolFromTopic', { topic, prompt });
     
     return {
       name: data.name || topic,
@@ -446,7 +446,7 @@ export const enrichToolWithDetails = async (tool: Tool): Promise<Tool> => {
 
 Format as JSON with keys: how_to_use, features_detailed, use_cases, pros_cons. Keep each section concise but informative (2-3 sentences each).`;
 
-    const data = await callGeminiAPI('enrichToolDetails', { toolName: tool.name, prompt });
+    const data = await callOpenAIAPI('enrichToolDetails', { toolName: tool.name, prompt });
     
     return {
       ...tool,

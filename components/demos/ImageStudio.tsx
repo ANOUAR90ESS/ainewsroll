@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { generateImage, editImage } from '../../services/geminiService';
+import { generateImage, editImage } from '../../services/openaiService';
 import { Image as ImageIcon, Wand2, Loader2, Download } from 'lucide-react';
 import { arrayBufferToBase64 } from '../../services/audioUtils';
 

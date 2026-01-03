@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generateVideo, pollVideoOperation } from '../../services/geminiService';
+import { generateVideo, pollVideoOperation } from '../../services/openaiService';
 import { Film, Loader2, Play } from 'lucide-react';
 import { arrayBufferToBase64 } from '../../services/audioUtils';
 

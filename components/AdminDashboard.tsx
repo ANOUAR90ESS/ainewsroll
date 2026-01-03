@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/geminiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, generateImage, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import ToolCard from './ToolCard';
 import NewsModal from './NewsModal';

@@ -19,7 +19,7 @@ const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'))
 const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
 const ToolDetail = lazy(() => import('./components/ToolDetail'));
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
-import { generateDirectoryTools } from './services/geminiService';
+import { generateDirectoryTools } from './services/openaiService';
 import {
   subscribeToTools,
   subscribeToNews,
