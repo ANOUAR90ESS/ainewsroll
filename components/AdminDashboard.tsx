@@ -159,10 +159,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const handlePublishReviewTool = (tool: Tool) => {
-      onAddTool(tool);
-      setReviewQueue(prev => prev.filter(t => t.id !== tool.id));
-      setLastSuccess({ type: 'tool', data: tool });
+  const handlePublishReviewTool = async (tool: Tool) => {
+      try {
+          console.log('📤 Publishing tool from review queue:', tool.name);
+          await onAddTool(tool);
+          setReviewQueue(prev => prev.filter(t => t.id !== tool.id));
+          setLastSuccess({ type: 'tool', data: tool });
+          console.log('✅ Tool published successfully:', tool.name);
+      } catch (error: any) {
+          console.error('❌ Error publishing tool:', error);
+          alert(`Failed to publish tool "${tool.name}": ${error.message}`);
+      }
   };
 
   const handleEditReviewTool = (tool: Tool) => {
@@ -175,11 +182,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setReviewQueue(prev => prev.filter(t => t.id !== id));
   };
 
-  const handlePublishAllReview = () => {
-      if(confirm(`Are you sure you want to publish all ${reviewQueue.length} tools?`)) {
-          reviewQueue.forEach(tool => onAddTool(tool));
-          setReviewQueue([]);
-          alert("All tools published!");
+  const handlePublishAllReview = async () => {
+      if(!confirm(`Are you sure you want to publish all ${reviewQueue.length} tools?`)) {
+          return;
+      }
+
+      console.log(`📤 Publishing ${reviewQueue.length} tools...`);
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const tool of reviewQueue) {
+          try {
+              console.log(`📝 Publishing ${successCount + 1}/${reviewQueue.length}: ${tool.name}`);
+              await onAddTool(tool);
+              successCount++;
+              console.log(`✅ Published: ${tool.name}`);
+          } catch (error: any) {
+              errorCount++;
+              console.error(`❌ Failed to publish ${tool.name}:`, error);
+          }
+      }
+
+      setReviewQueue([]);
+
+      if (errorCount === 0) {
+          alert(`✅ Successfully published all ${successCount} tools!`);
+      } else {
+          alert(`⚠️ Published ${successCount} tools, but ${errorCount} failed. Check console for details.`);
       }
   };
 
@@ -279,7 +308,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const defaultImage = categoryImages[newTool.category || ''] || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
 
     const tool: Tool = {
-      id: editingId || newTool.id || '', 
+      id: editingId || newTool.id || `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: newTool.name,
       description: newTool.description,
       category: newTool.category || 'Uncategorized',
@@ -295,14 +324,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       screenshots_urls: newTool.screenshots_urls || []
     };
 
-    if (editingId) {
-        onUpdateTool(editingId, tool);
-    } else {
-        onAddTool(tool);
+    console.log('📝 Saving tool:', tool);
+
+    try {
+      if (editingId) {
+          console.log('✏️ Updating existing tool:', editingId);
+          await onUpdateTool(editingId, tool);
+      } else {
+          console.log('➕ Adding new tool');
+          await onAddTool(tool);
+      }
+
+      console.log('✅ Tool saved successfully!');
+      setLastSuccess({ type: 'tool', data: tool });
+      resetToolForm();
+    } catch (error: any) {
+      console.error('❌ Error saving tool:', error);
+      alert(`Failed to save tool: ${error.message || 'Unknown error'}`);
     }
-    
-    setLastSuccess({ type: 'tool', data: tool });
-    resetToolForm();
   };
 
   const handleNewsSubmit = async (e: React.FormEvent) => {
