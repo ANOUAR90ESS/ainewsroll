@@ -23,12 +23,6 @@ import { generateDirectoryTools } from './services/openaiService';
 import {
   subscribeToTools,
   subscribeToNews,
-  addToolToDb,
-  deleteToolFromDb,
-  updateToolInDb,
-  addNewsToDb,
-  deleteNewsFromDb,
-  updateNewsInDb,
   subscribeToFavorites,
   addFavorite,
   removeFavorite
@@ -308,26 +302,54 @@ const App: React.FC = () => {
   const handleAddTool = async (tool: Tool) => {
     try {
         if (isSupabaseConfigured) {
-            await addToolToDb(tool);
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'addTool', payload: { tool } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to add tool');
+            }
+
+            const result = await response.json();
+            console.log('✅ Tool added via admin API:', result);
         } else {
             setTools((prev: Tool[]) => [tool, ...prev]);
         }
     } catch (e: any) {
         console.error("Error adding tool", e);
         alert(`Failed to save tool: ${e.message}`);
+        throw e; // Re-throw so AdminDashboard can handle it
     }
   };
 
   const handleUpdateTool = async (id: string, tool: Tool) => {
     try {
         if (isSupabaseConfigured) {
-            await updateToolInDb(id, tool);
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'updateTool', payload: { id, tool } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update tool');
+            }
+
+            const result = await response.json();
+            console.log('✅ Tool updated via admin API:', result);
         } else {
             setTools((prev: Tool[]) => prev.map((t: Tool) => t.id === id ? { ...tool, id } : t));
         }
     } catch (e: any) {
         console.error("Error updating tool", e);
         alert(`Failed to update tool: ${e.message}`);
+        throw e; // Re-throw so AdminDashboard can handle it
     }
   };
 
@@ -338,8 +360,20 @@ const App: React.FC = () => {
     try {
         if (isSupabaseConfigured) {
             console.log('Attempting to save news to Supabase...');
-            await addNewsToDb(article);
-            console.log('News saved to Supabase successfully');
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'addNews', payload: { article } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to add news');
+            }
+
+            const result = await response.json();
+            console.log('✅ News added via admin API:', result);
         } else {
             console.log('Supabase not configured, saving to local state');
             setNews((prev: NewsArticle[]) => [article, ...prev]);
@@ -348,38 +382,64 @@ const App: React.FC = () => {
     } catch (e: any) {
         console.error("Error adding news", e);
         alert(`Failed to save news: ${e.message}`);
+        throw e; // Re-throw so AdminDashboard can handle it
     }
   };
 
   const handleUpdateNews = async (id: string, article: NewsArticle) => {
     try {
         if (isSupabaseConfigured) {
-            await updateNewsInDb(id, article);
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'updateNews', payload: { id, article } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update news');
+            }
+
+            const result = await response.json();
+            console.log('✅ News updated via admin API:', result);
         } else {
             setNews((prev: NewsArticle[]) => prev.map((n: NewsArticle) => n.id === id ? { ...article, id } : n));
         }
     } catch (e: any) {
         console.error("Error updating news", e);
         alert(`Failed to update news: ${e.message}`);
+        throw e; // Re-throw so AdminDashboard can handle it
     }
   };
   
   const handleDeleteTool = async (id: string) => {
     console.log("Deleting tool:", id);
     // Note: Confirmation UI is now handled in AdminDashboard via Modal
-    
-    // Optimistic Update
-    const previousTools = [...tools];
-    setTools((prev: Tool[]) => prev.filter((t: Tool) => t.id !== id));
 
     if (isSupabaseConfigured) {
         try {
-            await deleteToolFromDb(id);
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'deleteTool', payload: { id } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete tool');
+            }
+
+            console.log('✅ Tool deleted via admin API');
         } catch (error: any) {
             console.error("Delete failed:", error);
             alert(`Failed to delete tool from database: ${error.message}.`);
-            setTools(previousTools); 
+            throw error; // Re-throw so AdminDashboard can handle it
         }
+    } else {
+        // Local state only - optimistic update
+        setTools((prev: Tool[]) => prev.filter((t: Tool) => t.id !== id));
     }
   };
 
@@ -387,18 +447,29 @@ const App: React.FC = () => {
     console.log("Deleting news:", id);
     // Note: Confirmation UI is now handled in AdminDashboard via Modal
 
-    // Optimistic Update
-    const previousNews = [...news];
-    setNews((prev: NewsArticle[]) => prev.filter((n: NewsArticle) => n.id !== id));
-
     if (isSupabaseConfigured) {
         try {
-            await deleteNewsFromDb(id);
+            // Use admin API endpoint with service role key
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'deleteNews', payload: { id } })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete news');
+            }
+
+            console.log('✅ News deleted via admin API');
         } catch (error: any) {
             console.error("Delete failed:", error);
             alert(`Failed to delete article from database: ${error.message}.`);
-            setNews(previousNews);
+            throw error; // Re-throw so AdminDashboard can handle it
         }
+    } else {
+        // Local state only - optimistic update
+        setNews((prev: NewsArticle[]) => prev.filter((n: NewsArticle) => n.id !== id));
     }
   };
 
