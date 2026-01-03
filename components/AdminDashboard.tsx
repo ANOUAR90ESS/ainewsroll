@@ -65,6 +65,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [fetchingRss, setFetchingRss] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [rssError, setRssError] = useState('');
+  const [autoImportingNews, setAutoImportingNews] = useState(false);
+  const [autoImportProgress, setAutoImportProgress] = useState({ current: 0, total: 0 });
 
   // News Create State
   const [newNews, setNewNews] = useState<Partial<NewsArticle>>({
@@ -785,6 +787,87 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     };
 
+  const autoImportAllNews = async () => {
+    if (rssItems.length === 0) {
+      alert('No RSS items to import. Please fetch a feed first.');
+      return;
+    }
+
+    const confirmImport = confirm(
+      `Import ${rssItems.length} news articles automatically?\n\nThis will:\n- Generate AI images for each article\n- Extract content using AI\n- Publish directly to the news feed\n\nThis may take a few minutes and use API credits.`
+    );
+
+    if (!confirmImport) return;
+
+    setAutoImportingNews(true);
+    setAutoImportProgress({ current: 0, total: rssItems.length });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < rssItems.length; i++) {
+      const item = rssItems[i];
+      setAutoImportProgress({ current: i + 1, total: rssItems.length });
+
+      try {
+        const extracted = await extractNewsFromRSSItem(item.title, item.description);
+
+        const stripHtml = (html: string) => {
+          const tmp = document.createElement('DIV');
+          tmp.innerHTML = html;
+          return tmp.textContent || tmp.innerText || '';
+        };
+
+        const cleanDescription = stripHtml(extracted.description || item.description).substring(0, 300).trim();
+        const cleanContent = stripHtml(extracted.content || item.description).substring(0, 1000).trim();
+        const title = (extracted.title || item.title).substring(0, 200).trim();
+
+        // Generate AI image
+        let newsImageUrl: string;
+        try {
+          newsImageUrl = await generateImage(
+            `Editorial illustration for news: "${title}". ${cleanDescription}. Professional, modern style.`,
+            "16:9",
+            "1K"
+          );
+        } catch (imgError) {
+          console.warn('Image generation failed, using placeholder:', imgError);
+          newsImageUrl = `https://picsum.photos/800/400?random=${Date.now()}-${i}`;
+        }
+
+        const article: NewsArticle = {
+          id: crypto.randomUUID(),
+          title,
+          description: cleanDescription || 'Breaking news from RSS feed.',
+          content: cleanContent,
+          source: item.link || 'RSS Feed',
+          imageUrl: newsImageUrl,
+          category: extracted.category || 'Technology',
+          date: new Date().toISOString()
+        };
+
+        await onAddNews(article);
+        successCount++;
+        console.log(`✅ Imported ${i + 1}/${rssItems.length}: ${title}`);
+
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+      } catch (error) {
+        errorCount++;
+        console.error(`❌ Failed to import item ${i + 1}:`, error);
+      }
+    }
+
+    setAutoImportingNews(false);
+    setAutoImportProgress({ current: 0, total: 0 });
+    setRssItems([]); // Clear RSS items after import
+
+    alert(
+      `Auto-import complete!\n\n✅ Successfully imported: ${successCount}\n❌ Failed: ${errorCount}\n\nCheck the News tab to see your articles.`
+    );
+  };
+
   const handleAnalyze = async () => {
     setAnalyzing(true);
     setAnalysisReport('');
@@ -1409,7 +1492,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             <div className="grid gap-4">
-               {rssItems.length > 0 && <h3 className="text-white font-semibold">Feed Items ({rssItems.length})</h3>}
+               {rssItems.length > 0 && (
+                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                   <h3 className="text-white font-semibold">Feed Items ({rssItems.length})</h3>
+                   <button
+                     type="button"
+                     onClick={autoImportAllNews}
+                     disabled={autoImportingNews}
+                     className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white px-6 py-2.5 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                   >
+                     {autoImportingNews ? (
+                       <>
+                         <Loader2 className="w-5 h-5 animate-spin" />
+                         Importing {autoImportProgress.current}/{autoImportProgress.total}...
+                       </>
+                     ) : (
+                       <>
+                         <Sparkles className="w-5 h-5" />
+                         Auto-Import All News
+                       </>
+                     )}
+                   </button>
+                 </div>
+               )}
                {rssItems.map(item => (
                  <div key={item.id} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col gap-2">
                     <div>
