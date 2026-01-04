@@ -18,6 +18,8 @@ const PaymentPage = lazy(() => import('./components/PaymentPage'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
 const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
 const ToolDetail = lazy(() => import('./components/ToolDetail'));
+const CoursesPage = lazy(() => import('./components/CoursesPage'));
+const CoursePage = lazy(() => import('./components/CoursePage'));
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/openaiService';
 import {
@@ -53,6 +55,8 @@ const App: React.FC = () => {
   const pathToView = (pathname: string): AppView => {
     if (pathname.startsWith('/tool/')) return AppView.TOOL_DETAIL;
     if (pathname.startsWith('/category/')) return AppView.CATEGORY;
+    if (pathname.startsWith('/courses/')) return AppView.COURSE_DETAIL;
+    if (pathname === '/courses') return AppView.COURSES;
     if (pathname === '/' || pathname === '/directory') return AppView.HOME;
     if (pathname === '/tools/free') return AppView.FREE_TOOLS;
     if (pathname === '/tools/paid') return AppView.PAID_TOOLS;
@@ -106,7 +110,9 @@ const App: React.FC = () => {
       [AppView.PAYMENT]: 'Payment | AI News-Roll',
       [AppView.FAVORITES]: 'My Favorites | AI News-Roll',
       [AppView.CATEGORY]: 'Category | AI News-Roll',
-      [AppView.TOOL_DETAIL]: 'Tool Detail | AI News-Roll'
+      [AppView.TOOL_DETAIL]: 'Tool Detail | AI News-Roll',
+      [AppView.COURSES]: 'AI Tool Courses | AI News-Roll',
+      [AppView.COURSE_DETAIL]: 'Course | AI News-Roll'
     };
 
     document.title = titleMap[currentView] || 'AI News-Roll';
@@ -834,7 +840,7 @@ const App: React.FC = () => {
             <div className="flex-1">
               {currentView === AppView.TOOL_DETAIL && (
                 <Suspense fallback={<LoadingFallback />}>
-                  <ToolDetail 
+                  <ToolDetail
                     tool={selectedTool}
                     onBack={() => navigate('/')}
                     onVisitWebsite={(url) => {
@@ -842,6 +848,7 @@ const App: React.FC = () => {
                         trackToolVisit(selectedTool.name, selectedTool.category, url);
                       }
                     }}
+                    isAdmin={user?.role === 'admin'}
                   />
                 </Suspense>
               )}
@@ -1044,6 +1051,16 @@ const App: React.FC = () => {
               {currentView === AppView.PAGES && (
                 <Suspense fallback={<LoadingFallback />}>
                   <GenericPage pageId={currentPageId} onBack={() => navigate('/')} />
+                </Suspense>
+              )}
+              {currentView === AppView.COURSES && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <CoursesPage />
+                </Suspense>
+              )}
+              {currentView === AppView.COURSE_DETAIL && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <CoursePage />
                 </Suspense>
               )}
             </div>

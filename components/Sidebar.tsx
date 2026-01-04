@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3, Heart, DollarSign, Sparkles, Clock } from 'lucide-react';
+import { LayoutGrid, MessageSquare, Newspaper, LogIn, ShieldAlert, LogOut, User, BarChart3, Heart, DollarSign, Sparkles, Clock, BookOpen } from 'lucide-react';
 import { AppView, UserProfile } from '../types';
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     { path: '/tools/paid', label: 'Paid Tools', icon: DollarSign },
     { path: '/tools/latest', label: 'Latest Tools', icon: Clock },
     { path: '/news', label: 'Latest News', icon: Newspaper },
+    { path: '/courses', label: 'AI Courses', icon: BookOpen },
   ];
 
   const sidebarClasses = `fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-300 ease-in-out ${

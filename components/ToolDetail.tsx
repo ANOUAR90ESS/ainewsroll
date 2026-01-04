@@ -1,14 +1,16 @@
 import React from 'react';
 import { ArrowLeft, ExternalLink, Tag, Sparkles, Globe2 } from 'lucide-react';
 import { Tool } from '../types';
+import GenerateCourseButton from './GenerateCourseButton';
 
 interface ToolDetailProps {
   tool: Tool | null;
   onBack: () => void;
   onVisitWebsite?: (url?: string) => void;
+  isAdmin?: boolean;
 }
 
-const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite }) => {
+const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, isAdmin = false }) => {
   if (!tool) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -78,6 +80,7 @@ const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite })
             >
               Visit website <ExternalLink className="w-4 h-4" />
             </button>
+            <GenerateCourseButton tool={tool} isAdmin={isAdmin} />
             <a
               href={tool.website}
               target="_blank"

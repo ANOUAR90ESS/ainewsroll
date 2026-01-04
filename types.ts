@@ -46,7 +46,9 @@ export enum AppView {
   PAYMENT = 'PAYMENT',
   FAVORITES = 'FAVORITES',
   CATEGORY = 'CATEGORY',
-  TOOL_DETAIL = 'TOOL_DETAIL'
+  TOOL_DETAIL = 'TOOL_DETAIL',
+  COURSES = 'COURSES',
+  COURSE_DETAIL = 'COURSE_DETAIL'
 }
 
 export interface UserFavorite {
