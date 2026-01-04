@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
-import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe } from 'lucide-react';
+import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw } from 'lucide-react';
 import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
@@ -152,6 +152,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       alert('Course deleted successfully!');
     } catch (error: any) {
       alert(`Error deleting course: ${error.message}`);
+    }
+  };
+
+  const handleRegenerateImage = async (tool: Tool) => {
+    if (!confirm(`Regenerate image for "${tool.name}"? This will fetch a new image from Unsplash.`)) {
+      return;
+    }
+
+    try {
+      // Fetch new image from Unsplash
+      const newImageUrl = await getUnsplashImageForTool(tool.name, tool.category);
+
+      // Update the tool with the new image
+      const updatedTool = { ...tool, imageUrl: newImageUrl };
+      await onUpdateTool(tool.id, updatedTool);
+
+      alert('Image regenerated successfully!');
+    } catch (error: any) {
+      alert(`Error regenerating image: ${error.message}`);
     }
   };
 
@@ -1843,16 +1862,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          <td className="px-6 py-4">{tool.price}</td>
                          <td className="px-6 py-4 text-right">
                            <div className="flex justify-end gap-2">
-                               <button 
+                               <button
+                                   onClick={() => handleRegenerateImage(tool)}
+                                   className="text-green-400 hover:text-green-300 p-2 hover:bg-green-400/10 rounded-full transition-colors"
+                                   title="Regenerate Image from Unsplash"
+                               >
+                                   <RefreshCw className="w-4 h-4" />
+                               </button>
+                               <button
                                    onClick={() => startEditingTool(tool)}
                                    className="text-indigo-400 hover:text-indigo-300 p-2 hover:bg-indigo-400/10 rounded-full transition-colors"
                                    title="Edit Tool"
                                >
                                    <Pencil className="w-4 h-4" />
                                </button>
-                               <button 
-                                   onClick={() => initiateDeleteTool(tool)} 
-                                   className="text-red-400 hover:text-red-300 p-2 hover:bg-red-400/10 rounded-full transition-colors" 
+                               <button
+                                   onClick={() => initiateDeleteTool(tool)}
+                                   className="text-red-400 hover:text-red-300 p-2 hover:bg-red-400/10 rounded-full transition-colors"
                                    title="Delete Tool"
                                >
                                    <Trash2 className="w-4 h-4" />
