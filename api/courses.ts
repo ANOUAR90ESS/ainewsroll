@@ -1,6 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { generateCourseWithGemini } from '../services/geminiCourseService';
 
 // Service role para bypass RLS (solo admin backend)
 const getAdminClient = () => {
@@ -33,7 +32,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.body || {};
 
   try {
+    console.log('[Courses API] Request received:', req.method, action);
     const supabase = getAdminClient();
+    console.log('[Courses API] Supabase client initialized');
 
     // GET: Obtener todos los cursos
     if (req.method === 'GET') {
@@ -64,6 +65,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           let courseContent;
           try {
+            // Dynamic import to avoid loading Gemini on every request
+            const { generateCourseWithGemini } = await import('../services/geminiCourseService');
+
             // Llamada a Gemini para generar curso completo
             courseContent = await generateCourseWithGemini(
               toolName,
@@ -159,9 +163,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Courses API error:', error);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({
       error: error.message || 'Failed to process request',
-      details: error.details || error.hint || ''
+      details: error.details || error.hint || '',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
