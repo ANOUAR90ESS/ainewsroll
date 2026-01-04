@@ -68,7 +68,7 @@ const generateModuleContent = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
       contents: `
         Context: Educational course about "${toolName}" - ${topic}.
         Module: "${moduleTitle}".
@@ -155,7 +155,7 @@ export const generateCourseWithGemini = async (
   // STEP 1: Generate Course Outline
   try {
     const outlineResponse = await ai.models.generateContent({
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.0-flash",
       contents: `Create a comprehensive course outline for: "${toolName}".
 
     Tool Description: ${toolDescription}
