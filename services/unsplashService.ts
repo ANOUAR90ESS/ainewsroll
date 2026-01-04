@@ -42,13 +42,27 @@ export const getUnsplashImage = async (query: string, width: number = 800, heigh
 };
 
 export const getUnsplashImageForNews = async (title: string, category: string): Promise<string> => {
-  // Combine title and category for better search results
-  const searchQuery = `${category} news technology`;
+  // Extract key words from title for unique images
+  const titleKeywords = title
+    .split(' ')
+    .filter(word => word.length > 4) // Only words longer than 4 chars
+    .slice(0, 2) // Take first 2 keywords
+    .join(' ');
+
+  // Combine title keywords and category for unique, relevant results
+  const searchQuery = titleKeywords ? `${titleKeywords} ${category}` : `${category} technology news`;
   return getUnsplashImage(searchQuery, 800, 400);
 };
 
 export const getUnsplashImageForTool = async (toolName: string, category: string): Promise<string> => {
-  // Use category for tool images
-  const searchQuery = `${category} technology software`;
+  // Extract key words from tool name for unique images
+  const toolKeywords = toolName
+    .split(' ')
+    .filter(word => word.length > 3)
+    .slice(0, 2)
+    .join(' ');
+
+  // Combine tool name and category for relevant results
+  const searchQuery = toolKeywords ? `${toolKeywords} ${category}` : `${category} technology`;
   return getUnsplashImage(searchQuery, 400, 250);
 };
