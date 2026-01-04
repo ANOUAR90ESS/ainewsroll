@@ -29,7 +29,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onDeleteTool, onDeleteNews, 
     onBack
 }) => {
-  const [activeTab, setActiveTab] = useState<'create' | 'rss' | 'news' | 'manage' | 'analyze'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'rss' | 'news' | 'manage' | 'analyze' | 'courses'>('create');
   
   // State to track if we are editing an existing item
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -958,11 +958,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <LayoutGrid className="w-4 h-4 inline mr-2" /> Manage
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('analyze')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'analyze' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
             >
               <BarChart3 className="w-4 h-4 inline mr-2" /> Analyze
+            </button>
+            <button
+              onClick={() => setActiveTab('courses')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'courses' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+            >
+              <GraduationCap className="w-4 h-4 inline mr-2" /> Courses
             </button>
          </div>
        </div>
@@ -1899,6 +1905,110 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <p>Click "Generate Report" to analyze current tool trends.</p>
                  </div>
                )}
+            </div>
+         </div>
+       )}
+
+       {/* --- Courses Tab --- */}
+       {activeTab === 'courses' && (
+         <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+               <div className="flex items-start justify-between gap-4 mb-6">
+                 <div>
+                   <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                     <GraduationCap className="w-5 h-5 text-indigo-400" />
+                     AI Course Generator
+                   </h3>
+                   <p className="text-sm text-zinc-400 mt-1">
+                     Generate comprehensive courses from your tools using GPT-4o
+                   </p>
+                 </div>
+               </div>
+
+               {/* Tools List for Course Generation */}
+               <div className="space-y-4">
+                 <h4 className="text-white font-medium">Select a tool to generate a course:</h4>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                   {tools.map(tool => (
+                     <div
+                       key={tool.id}
+                       className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-indigo-500/50 transition-all group"
+                     >
+                       <div className="flex items-start gap-3 mb-3">
+                         {tool.imageUrl && (
+                           <img
+                             src={tool.imageUrl}
+                             alt={tool.name}
+                             className="w-12 h-12 rounded-lg object-cover"
+                           />
+                         )}
+                         <div className="flex-1 min-w-0">
+                           <h5 className="text-white font-medium text-sm line-clamp-1">{tool.name}</h5>
+                           <p className="text-xs text-zinc-500">{tool.category}</p>
+                         </div>
+                       </div>
+
+                       <p className="text-xs text-zinc-400 mb-3 line-clamp-2">{tool.description}</p>
+
+                       <button
+                         onClick={async () => {
+                           if (!confirm(`Generate a professional course for ${tool.name}? This will use GPT-4o and may take 30-60 seconds.`)) return;
+
+                           const button = document.activeElement as HTMLButtonElement;
+                           const originalText = button.innerHTML;
+                           button.disabled = true;
+                           button.innerHTML = '<svg class="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating...';
+
+                           try {
+                             const response = await fetch('/api/courses', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({
+                                 action: 'generateCourse',
+                                 toolId: tool.id,
+                                 toolName: tool.name,
+                                 toolDescription: tool.description,
+                                 category: tool.category,
+                                 imageUrl: tool.imageUrl
+                               })
+                             });
+
+                             const data = await response.json();
+
+                             if (!response.ok) {
+                               throw new Error(data.error || 'Failed to generate course');
+                             }
+
+                             button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Course Created!';
+                             button.className = 'w-full bg-green-600 text-white text-xs font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-2';
+
+                             setTimeout(() => {
+                               window.location.href = `/courses/${data.course.id}`;
+                             }, 1500);
+
+                           } catch (error: any) {
+                             alert(`Error: ${error.message}`);
+                             button.disabled = false;
+                             button.innerHTML = originalText;
+                           }
+                         }}
+                         className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 group-hover:bg-indigo-500"
+                       >
+                         <GraduationCap className="w-4 h-4" />
+                         Generate Course
+                       </button>
+                     </div>
+                   ))}
+                 </div>
+
+                 {tools.length === 0 && (
+                   <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-lg text-zinc-500">
+                     <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                     <p>No tools available. Create tools first to generate courses.</p>
+                   </div>
+                 )}
+               </div>
             </div>
          </div>
        )}
