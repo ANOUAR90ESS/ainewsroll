@@ -153,9 +153,10 @@ export const generateCourseWithGemini = async (
   console.log(`🎓 [Gemini] Step 1: Generating course outline for ${toolName}...`);
 
   // STEP 1: Generate Course Outline
-  const outlineResponse = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Create a comprehensive course outline for: "${toolName}".
+  try {
+    const outlineResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Create a comprehensive course outline for: "${toolName}".
 
     Tool Description: ${toolDescription}
     Category: ${category}
@@ -221,67 +222,72 @@ export const generateCourseWithGemini = async (
     }
   });
 
-  const outlineJson = cleanJSON(outlineResponse.text || "{}");
-  let outline;
-  try {
-    outline = JSON.parse(outlineJson);
-  } catch (e) {
-    console.error('❌ [Gemini] Failed to parse outline JSON:', e);
-    throw new Error("Failed to generate course outline. Please try again.");
+    const outlineJson = cleanJSON(outlineResponse.text || "{}");
+    let outline;
+    try {
+      outline = JSON.parse(outlineJson);
+    } catch (e) {
+      console.error('❌ [Gemini] Failed to parse outline JSON:', e);
+      console.error('Raw response text:', outlineResponse.text?.substring(0, 500));
+      throw new Error("Failed to generate course outline. Please try again.");
+    }
+
+    console.log(`✅ [Gemini] Step 1 complete: Outline generated with ${outline.modules?.length || 0} modules`);
+
+    // STEP 2: Generate detailed content for each module in parallel
+    console.log('🎓 [Gemini] Step 2: Generating detailed lesson content...');
+
+    const modulesWithContent = await Promise.all(
+      (outline.modules || []).map(async (mod: any, idx: number) => {
+        const lessonTitles = mod.lessons?.map((l: any) => l.title) || [];
+        const lessonDurations = mod.lessons?.map((l: any) => l.duration) || [];
+
+        console.log(`  📚 Generating content for Module ${idx + 1}: ${mod.title}`);
+
+        const content = await generateModuleContent(
+          toolDescription,
+          toolName,
+          mod.title,
+          lessonTitles
+        );
+
+        return {
+          title: mod.title,
+          description: mod.description || `Learn about ${mod.title}`,
+          icon: mod.icon || '📖',
+          lessons: lessonTitles.map((title: string, index: number) => ({
+            id: index + 1,
+            title: title,
+            duration: lessonDurations[index] || '10 min',
+            content: content[index]?.script || "Content not available.",
+            key_points: content[index]?.visualContent?.keyPoints || [],
+            tips: content[index]?.quiz?.explanation || undefined
+          }))
+        };
+      })
+    );
+
+    console.log('✅ [Gemini] Step 2 complete: All lesson content generated');
+
+    const totalLessons = modulesWithContent.reduce((sum, mod) => sum + mod.lessons.length, 0);
+
+    return {
+      title: outline.title || `Mastering ${toolName}`,
+      description: outline.description || `A comprehensive course on ${toolName}`,
+      difficulty: outline.difficulty || 'beginner',
+      estimated_duration: outline.estimated_duration || '2-3 hours',
+      learning_objectives: outline.learning_objectives || [],
+      prerequisites: outline.prerequisites || ['Basic computer skills'],
+      modules: modulesWithContent,
+      summary: {
+        total_modules: modulesWithContent.length,
+        total_lessons: totalLessons,
+        key_takeaways: outline.key_takeaways || []
+      },
+      resources: outline.resources || []
+    };
+  } catch (error: any) {
+    console.error('❌ [Gemini] Course generation error:', error);
+    throw new Error(`Failed to generate course: ${error.message || 'Unknown error'}`);
   }
-
-  console.log(`✅ [Gemini] Step 1 complete: Outline generated with ${outline.modules?.length || 0} modules`);
-
-  // STEP 2: Generate detailed content for each module in parallel
-  console.log('🎓 [Gemini] Step 2: Generating detailed lesson content...');
-
-  const modulesWithContent = await Promise.all(
-    (outline.modules || []).map(async (mod: any, idx: number) => {
-      const lessonTitles = mod.lessons?.map((l: any) => l.title) || [];
-      const lessonDurations = mod.lessons?.map((l: any) => l.duration) || [];
-
-      console.log(`  📚 Generating content for Module ${idx + 1}: ${mod.title}`);
-
-      const content = await generateModuleContent(
-        toolDescription,
-        toolName,
-        mod.title,
-        lessonTitles
-      );
-
-      return {
-        title: mod.title,
-        description: mod.description || `Learn about ${mod.title}`,
-        icon: mod.icon || '📖',
-        lessons: lessonTitles.map((title: string, index: number) => ({
-          id: index + 1,
-          title: title,
-          duration: lessonDurations[index] || '10 min',
-          content: content[index]?.script || "Content not available.",
-          key_points: content[index]?.visualContent?.keyPoints || [],
-          tips: content[index]?.quiz?.explanation || undefined
-        }))
-      };
-    })
-  );
-
-  console.log('✅ [Gemini] Step 2 complete: All lesson content generated');
-
-  const totalLessons = modulesWithContent.reduce((sum, mod) => sum + mod.lessons.length, 0);
-
-  return {
-    title: outline.title || `Mastering ${toolName}`,
-    description: outline.description || `A comprehensive course on ${toolName}`,
-    difficulty: outline.difficulty || 'beginner',
-    estimated_duration: outline.estimated_duration || '2-3 hours',
-    learning_objectives: outline.learning_objectives || [],
-    prerequisites: outline.prerequisites || ['Basic computer skills'],
-    modules: modulesWithContent,
-    summary: {
-      total_modules: modulesWithContent.length,
-      total_lessons: totalLessons,
-      key_takeaways: outline.key_takeaways || []
-    },
-    resources: outline.resources || []
-  };
 };

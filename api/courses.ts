@@ -62,14 +62,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           console.log('🎓 [Gemini] Generating course for:', toolName);
 
-          // Llamada a Gemini para generar curso completo
-          const courseContent = await generateCourseWithGemini(
-            toolName,
-            toolDescription,
-            category || 'AI Tools'
-          );
-
-          console.log('✅ [Gemini] Course content generated successfully');
+          let courseContent;
+          try {
+            // Llamada a Gemini para generar curso completo
+            courseContent = await generateCourseWithGemini(
+              toolName,
+              toolDescription,
+              category || 'AI Tools'
+            );
+            console.log('✅ [Gemini] Course content generated successfully');
+          } catch (genError: any) {
+            console.error('❌ [Gemini] Generation failed:', genError);
+            return res.status(500).json({
+              error: 'Failed to generate course with Gemini',
+              details: genError.message || 'AI generation error'
+            });
+          }
 
           // Guardar en Supabase
           const { data: course, error: dbError } = await supabase
