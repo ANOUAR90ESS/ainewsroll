@@ -1,10 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateCourseWithGemini } from '../services/geminiCourseService';
 
 // Service role para bypass RLS (solo admin backend)
 const getAdminClient = () => {
@@ -64,147 +60,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           }
 
-          // Prompt optimizado para ChatGPT
-          const prompt = `You are an expert AI course creator. Create a comprehensive, practical course about this AI tool.
+          console.log('🎓 [Gemini] Generating course for:', toolName);
 
-**Tool Name:** ${toolName}
-**Description:** ${toolDescription}
-**Category:** ${category || 'AI Tools'}
+          // Llamada a Gemini para generar curso completo
+          const courseContent = await generateCourseWithGemini(
+            toolName,
+            toolDescription,
+            category || 'AI Tools'
+          );
 
-Generate a complete course in JSON format. Respond ONLY with valid JSON, no markdown or extra text:
-
-{
-  "title": "Mastering ${toolName}: Complete Guide",
-  "description": "A comprehensive course description (2-3 sentences)",
-  "difficulty": "beginner",
-  "estimated_duration": "2-3 hours",
-  "learning_objectives": [
-    "Understand what ${toolName} is and its core features",
-    "Learn to set up and configure ${toolName}",
-    "Master practical use cases and workflows",
-    "Apply advanced techniques and best practices"
-  ],
-  "prerequisites": ["Basic computer skills", "Interest in AI tools"],
-  "modules": [
-    {
-      "id": 1,
-      "title": "Introduction to ${toolName}",
-      "description": "Get started with the fundamentals",
-      "icon": "🚀",
-      "lessons": [
-        {
-          "id": 1,
-          "title": "What is ${toolName}?",
-          "duration": "10 min",
-          "content": "Detailed lesson content with explanations, examples, and practical insights (minimum 200 words). Include real-world context and why this matters.",
-          "key_points": ["Key point 1", "Key point 2", "Key point 3"],
-          "tips": "Pro tip for this lesson"
-        },
-        {
-          "id": 2,
-          "title": "Key Features Overview",
-          "duration": "15 min",
-          "content": "Comprehensive overview of features...",
-          "key_points": ["Feature 1", "Feature 2", "Feature 3"],
-          "tips": "How to get the most out of these features"
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Getting Started",
-      "description": "Setup and first steps",
-      "icon": "⚙️",
-      "lessons": [
-        {
-          "id": 1,
-          "title": "Account Setup & Configuration",
-          "duration": "12 min",
-          "content": "Step by step guide...",
-          "key_points": ["Step 1", "Step 2", "Step 3"],
-          "tips": "Tip for setup"
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "title": "Practical Applications",
-      "description": "Real-world use cases",
-      "icon": "💡",
-      "lessons": []
-    },
-    {
-      "id": 4,
-      "title": "Advanced Techniques",
-      "description": "Level up your skills",
-      "icon": "🎯",
-      "lessons": []
-    }
-  ],
-  "summary": {
-    "total_modules": 4,
-    "total_lessons": 10,
-    "key_takeaways": ["Takeaway 1", "Takeaway 2", "Takeaway 3"]
-  },
-  "resources": [
-    {
-      "title": "Official Documentation",
-      "type": "documentation",
-      "description": "Link to official docs"
-    }
-  ]
-}
-
-IMPORTANT RULES:
-1. Create exactly 4 modules with 2-4 lessons each
-2. Each lesson content must be at least 150 words with practical examples
-3. Make content specific to ${toolName}, not generic
-4. Include practical tips and real use cases
-5. Response must be valid JSON only`;
-
-          console.log('🎓 Generating course for:', toolName);
-
-          // Llamada a ChatGPT
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are an expert course creator. Always respond with valid JSON only, no markdown code blocks or additional text. Ensure all JSON is properly formatted and complete.'
-              },
-              { role: 'user', content: prompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 4500,
-          });
-
-          const responseText = completion.choices[0]?.message?.content;
-
-          if (!responseText) {
-            throw new Error('No response from ChatGPT');
-          }
-
-          console.log('📝 ChatGPT response received, parsing...');
-
-          // Limpiar y parsear JSON
-          let courseContent;
-          try {
-            // Remover posibles markdown code blocks
-            let cleanJson = responseText
-              .replace(/```json\n?/g, '')
-              .replace(/```\n?/g, '')
-              .trim();
-
-            courseContent = JSON.parse(cleanJson);
-          } catch (parseError) {
-            console.error('❌ JSON Parse Error:', parseError);
-            console.error('Raw response:', responseText.substring(0, 500));
-            return res.status(500).json({
-              error: 'Failed to parse course content. Please try again.'
-            });
-          }
-
-          console.log('✅ Course content parsed successfully');
+          console.log('✅ [Gemini] Course content generated successfully');
 
           // Guardar en Supabase
           const { data: course, error: dbError } = await supabase
