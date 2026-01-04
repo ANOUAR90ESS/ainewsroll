@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe } from 'lucide-react';
 import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
@@ -30,10 +30,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onBack
 }) => {
   const [activeTab, setActiveTab] = useState<'create' | 'rss' | 'news' | 'manage' | 'analyze' | 'courses'>('create');
-  
+
   // State to track if we are editing an existing item
   const [editingId, setEditingId] = useState<string | null>(null);
   const [lastSuccess, setLastSuccess] = useState<{ type: 'tool' | 'news', data: any } | null>(null);
+
+  // Courses state
+  const [existingCourses, setExistingCourses] = useState<any[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
 
   // Tool Create State
   const [newTool, setNewTool] = useState<Partial<Tool>>({
@@ -101,6 +105,55 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // News Scraper Modal State
   const [isScraperModalOpen, setIsScraperModalOpen] = useState(false);
+
+  // Load courses when courses tab is active
+  useEffect(() => {
+    if (activeTab === 'courses') {
+      fetchExistingCourses();
+    }
+  }, [activeTab]);
+
+  const fetchExistingCourses = async () => {
+    try {
+      setLoadingCourses(true);
+      const response = await fetch('/api/courses');
+      if (!response.ok) throw new Error('Failed to fetch courses');
+      const data = await response.json();
+      setExistingCourses(data.courses || []);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      setExistingCourses([]);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string, courseName: string) => {
+    if (!confirm(`Are you sure you want to delete the course "${courseName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deleteCourse',
+          id: courseId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete course');
+      }
+
+      // Refresh the courses list
+      await fetchExistingCourses();
+      alert('Course deleted successfully!');
+    } catch (error: any) {
+      alert(`Error deleting course: ${error.message}`);
+    }
+  };
 
   // Tool Categories Definition
   const toolCategories = [
@@ -1912,15 +1965,85 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
        {/* --- Courses Tab --- */}
        {activeTab === 'courses' && (
          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Existing Courses Section */}
+            {existingCourses.length > 0 && (
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+                <div className="flex items-start justify-between gap-4 mb-6">
+                  <div>
+                    <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-green-400" />
+                      Existing Courses ({existingCourses.length})
+                    </h3>
+                    <p className="text-sm text-zinc-400 mt-1">
+                      Manage your published courses
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {existingCourses.map(course => (
+                    <div
+                      key={course.id}
+                      className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-green-500/50 transition-all group"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        {course.thumbnail_url ? (
+                          <img
+                            src={course.thumbnail_url}
+                            alt={course.title}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-900/30 to-emerald-900/30 flex items-center justify-center">
+                            <GraduationCap className="w-6 h-6 text-green-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h5 className="text-white font-medium text-sm line-clamp-2">{course.title}</h5>
+                          <p className="text-xs text-zinc-500">{course.tool_name}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
+                        <span className="bg-green-500/20 text-green-300 px-2 py-0.5 rounded">{course.difficulty}</span>
+                        <span>{course.content?.summary?.total_lessons || 0} lessons</span>
+                        <span>•</span>
+                        <span>{course.view_count || 0} views</span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <a
+                          href={`/courses/${course.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 bg-green-600 hover:bg-green-500 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors text-center"
+                        >
+                          View Course
+                        </a>
+                        <button
+                          onClick={() => handleDeleteCourse(course.id, course.title)}
+                          className="bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors"
+                          title="Delete course"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generate New Course Section */}
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
                <div className="flex items-start justify-between gap-4 mb-6">
                  <div>
                    <h3 className="text-lg font-medium text-white flex items-center gap-2">
                      <GraduationCap className="w-5 h-5 text-indigo-400" />
-                     AI Course Generator
+                     Generate New Course
                    </h3>
                    <p className="text-sm text-zinc-400 mt-1">
-                     Generate comprehensive courses from your tools using GPT-4o
+                     Generate comprehensive courses from your tools using Gemini AI
                    </p>
                  </div>
                </div>
