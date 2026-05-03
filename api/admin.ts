@@ -42,10 +42,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { action, payload } = req.body;
-
   try {
-    const supabase = getAdminClient();
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
 
+    const token = authHeader.split(' ')[1];
+
+    // We can use the service role client or anon client to get user by token.
+    // getAdminClient().auth.getUser(token) works securely on the backend.
+    const supabaseAdmin = getAdminClient();
+
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+
+    // Check if user has admin role
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+
+    const supabase = supabaseAdmin; // Already initialized
     switch (action) {
       case 'addTool': {
         const { tool } = payload;

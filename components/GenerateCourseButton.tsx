@@ -1,3 +1,4 @@
+import { supabase } from '../services/supabase';
 import React, { useState } from 'react';
 import { BookOpen, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Tool } from '../types';
@@ -25,10 +26,12 @@ const GenerateCourseButton: React.FC<GenerateCourseButtonProps> = ({
     setErrorMessage('');
 
     try {
+      const { data: { session } } = await supabase!.auth.getSession();
       const response = await fetch('/api/courses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
         },
         body: JSON.stringify({
           action: 'generateCourse',

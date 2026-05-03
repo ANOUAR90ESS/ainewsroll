@@ -310,9 +310,13 @@ const App: React.FC = () => {
     try {
         if (isSupabaseConfigured) {
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'addTool', payload: { tool } })
             });
 
@@ -337,9 +341,13 @@ const App: React.FC = () => {
     try {
         if (isSupabaseConfigured) {
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'updateTool', payload: { id, tool } })
             });
 
@@ -368,9 +376,13 @@ const App: React.FC = () => {
         if (isSupabaseConfigured) {
             logger.log('Attempting to save news to Supabase...');
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'addNews', payload: { article } })
             });
 
@@ -397,9 +409,13 @@ const App: React.FC = () => {
     try {
         if (isSupabaseConfigured) {
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'updateNews', payload: { id, article } })
             });
 
@@ -427,9 +443,13 @@ const App: React.FC = () => {
     if (isSupabaseConfigured) {
         try {
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'deleteTool', payload: { id } })
             });
 
@@ -457,9 +477,13 @@ const App: React.FC = () => {
     if (isSupabaseConfigured) {
         try {
             // Use admin API endpoint with service role key
+            const { data: { session } } = await supabase!.auth.getSession();
             const response = await fetch('/api/admin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ action: 'deleteNews', payload: { id } })
             });
 
