@@ -51,6 +51,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST: Generar o gestionar cursos
     if (req.method === 'POST') {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing or invalid authorization header' });
+      }
+
+      const token = authHeader.split(' ')[1];
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+      if (userError || !user) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      }
+
+      // Check if user has admin role
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !profile || profile.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: Admin access required' });
+      }
+
       switch (action) {
         case 'generateCourse': {
           const { toolId, toolName, toolDescription, category, imageUrl } = req.body;
