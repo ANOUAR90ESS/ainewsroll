@@ -5,7 +5,7 @@ import React, { useEffect } from 'react';
  * Tracks user interactions and traffic patterns for SEO insights
  */
 
-export const GA4_MEASUREMENT_ID = 'G-81P94TP3VF';
+export const GA4_MEASUREMENT_ID = 'G-01QLTJG4SX';
 
 declare global {
   interface Window {
