@@ -1,9 +1,10 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Tag, Heart, BookOpen } from 'lucide-react';
 import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
 import { trackToolDetailView, trackToolVisit } from '../services/analyticsService';
+import { optimizeImageUrl } from '../utils/imageOptimizer';
 
 const categoryImageFallbacks: Record<string, string[]> = {
   Writing: [
@@ -63,13 +64,17 @@ const ToolCard: React.FC<ToolCardProps> = ({
   };
 
   const handleImageError = () => {
-    console.error(`Failed to load image for tool: ${tool.name}`, {
-      imageUrl: tool.imageUrl?.substring(0, 100) + '...',
-      isBase64: tool.imageUrl?.startsWith('data:'),
-      length: tool.imageUrl?.length
-    });
-    setImageError(true);
+    if (!imageError) {
+      setImageError(true);
+    }
   };
+
+  const displayImageUrl = useMemo(() => {
+    const rawUrl = (!imageError && tool.imageUrl && !tool.imageUrl.includes('picsum.photos')) 
+      ? tool.imageUrl 
+      : getToolFallbackImage(tool.category, tool.name);
+    return optimizeImageUrl(rawUrl, 600);
+  }, [imageError, tool.imageUrl, tool.category, tool.name]);
 
   // Check if tool has extended content
   const hasExtendedContent = !!(
@@ -85,7 +90,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
       <div className="group relative bg-zinc-900/50 rounded-xl border border-zinc-800 hover:border-indigo-500/50 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-indigo-900/20 flex flex-col h-full">
         <div className="relative aspect-video overflow-hidden bg-zinc-950">
           {/* Image Loading Placeholder */}
-          {!imageLoaded && !imageError && (
+          {!imageLoaded && (
             <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
               <div className="w-12 h-12 border-4 border-zinc-700 border-t-indigo-500 rounded-full animate-spin"></div>
             </div>
@@ -93,7 +98,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
 
           {/* Tool image or fallback image */}
           <img
-            src={!imageError && tool.imageUrl ? tool.imageUrl : getToolFallbackImage(tool.category, tool.name)}
+            src={displayImageUrl}
             alt={tool.name}
             width="1280"
             height="720"
