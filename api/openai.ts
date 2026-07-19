@@ -76,7 +76,7 @@ Return JSON array of slides with this structure: [{"title": "string", "content":
             n: 1,
           });
 
-          const imageUrl = imageResponse.data[0].url;
+          const imageUrl = imageResponse.data?.[0]?.url;
 
           if (imageUrl) {
             console.log('✅ DALL-E 3 generated image successfully');

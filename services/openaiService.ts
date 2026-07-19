@@ -1,8 +1,9 @@
 import { Tool, Slide, NewsArticle } from "../types";
+import { getUnsplashImageForNews, getUnsplashImageForTool } from "./unsplashService";
 
 // API endpoint for secure OpenAI calls
 // Use local development server if in dev mode, otherwise use Vercel API routes
-const isDevelopment = import.meta.env.DEV || window.location.hostname === 'localhost';
+const isDevelopment = (import.meta as any).env?.DEV || window.location.hostname === 'localhost';
 const OPENAI_API = isDevelopment
   ? 'http://localhost:3001/api/openai'
   : '/api/openai';
@@ -214,7 +215,7 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
         ];
         
         // Create hash from tool name for consistent selection
-        const hash = t.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hash = t.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
         imageUrl = images[hash % images.length];
         
         console.log(`📸 Using category fallback for ${t.name}: ${t.category} (variant ${(hash % images.length) + 1}/${images.length})`);
