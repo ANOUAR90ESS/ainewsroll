@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, ExternalLink, Tag, Sparkles, Globe2 } from 'lucide-react';
 import { Tool } from '../types';
 import GenerateCourseButton from './GenerateCourseButton';
+
+const toolDetailFallbackImages: Record<string, string[]> = {
+  Writing: [
+    'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1280&h=720&fit=crop&q=80'
+  ],
+  Education: [
+    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1280&h=720&fit=crop&q=80'
+  ]
+};
+
+const getToolDetailFallbackImage = (category: string, toolName: string) => {
+  const images = toolDetailFallbackImages[category] || [
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80'
+  ];
+  const hash = toolName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return images[hash % images.length];
+};
 
 interface ToolDetailProps {
   tool: Tool | null;
@@ -11,6 +34,8 @@ interface ToolDetailProps {
 }
 
 const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, isAdmin = false }) => {
+  const [imageError, setImageError] = useState(false);
+
   if (!tool) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -44,11 +69,19 @@ const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, i
 
       <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="relative aspect-video bg-zinc-950">
-          {tool.imageUrl ? (
-            <img src={tool.imageUrl} alt={tool.name} className="w-full h-full object-cover" loading="lazy" />
-          ) : (
-            <div className="h-full flex items-center justify-center text-zinc-500">
-              <Sparkles className="w-10 h-10" />
+          <img
+            src={!imageError && tool.imageUrl ? tool.imageUrl : getToolDetailFallbackImage(tool.category, tool.name)}
+            alt={tool.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImageError(true)}
+          />
+          {imageError && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="text-center text-white">
+                <Sparkles className="w-12 h-12 mx-auto mb-2" />
+                <p className="text-sm">Displaying fallback image</p>
+              </div>
             </div>
           )}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">

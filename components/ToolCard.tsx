@@ -5,6 +5,39 @@ import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
 import { trackToolDetailView, trackToolVisit } from '../services/analyticsService';
 
+const categoryImageFallbacks: Record<string, string[]> = {
+  Writing: [
+    'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1280&h=720&fit=crop&q=80'
+  ],
+  'Image Generation': [
+    'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1561998338-13ad7883b20f?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&fit=crop&q=80'
+  ],
+  'Data Analysis': [
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=1280&h=720&fit=crop&q=80'
+  ],
+  Education: [
+    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1280&h=720&fit=crop&q=80'
+  ]
+};
+
+const getToolFallbackImage = (category: string, toolName: string) => {
+  const images = categoryImageFallbacks[category] || [
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80'
+  ];
+  const hash = toolName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return images[hash % images.length];
+};
+
 interface ToolCardProps {
   tool: Tool;
   isFavorite?: boolean;
@@ -58,28 +91,26 @@ const ToolCard: React.FC<ToolCardProps> = ({
             </div>
           )}
 
-          {/* Image */}
-          {!imageError && tool.imageUrl && (
-            <img
-              src={tool.imageUrl}
-              alt={tool.name}
-              width="1280"
-              height="720"
-              className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
-                imageLoaded ? 'opacity-80 group-hover:opacity-100' : 'opacity-0'
-              }`}
-              loading="lazy"
-              onLoad={() => setImageLoaded(true)}
-              onError={handleImageError}
-            />
-          )}
+          {/* Tool image or fallback image */}
+          <img
+            src={!imageError && tool.imageUrl ? tool.imageUrl : getToolFallbackImage(tool.category, tool.name)}
+            alt={tool.name}
+            width="1280"
+            height="720"
+            className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              imageLoaded ? 'opacity-80 group-hover:opacity-100' : 'opacity-0'
+            }`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={handleImageError}
+          />
 
-          {/* Fallback for broken or missing images */}
-          {(imageError || !tool.imageUrl) && (
-            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-zinc-950 flex items-center justify-center">
+          {/* Fallback overlay if the primary image failed */}
+          {imageError && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <div className="text-center">
-                <Sparkles className="w-12 h-12 text-zinc-700 mx-auto mb-2" />
-                <p className="text-zinc-600 text-sm font-medium">{tool.category}</p>
+                <Sparkles className="w-12 h-12 text-zinc-100 mx-auto mb-2" />
+                <p className="text-zinc-200 text-sm font-medium">{tool.category}</p>
               </div>
             </div>
           )}
