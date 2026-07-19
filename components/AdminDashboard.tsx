@@ -2,7 +2,7 @@ import { supabase } from '../services/supabase';
 import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend } from '../services/openaiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend, generateImage } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
 import ToolCard from './ToolCard';
@@ -517,20 +517,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingImg(true);
     try {
-      // Use custom prompt as search query if provided, otherwise use title + category
-      const searchQuery = newsImagePrompt?.trim() || newNews.title || '';
-      console.log('🎨 Fetching Unsplash image with query:', searchQuery);
-
-      const imageUrl = await getUnsplashImageForNews(
-        searchQuery,
-        newNews.category || 'Technology'
-      );
-
-      console.log('✅ Unsplash image URL:', imageUrl);
+      const customPrompt = newsImagePrompt?.trim() ? ` Style/Scene hint: ${newsImagePrompt.trim()}.` : '';
+      const promptText = `High-resolution editorial feature illustration for news article: "${newNews.title}". Category: ${newNews.category || 'Technology'}.${customPrompt} Professional 8k quality, cinematic lighting, modern digital art.`;
+      
+      console.log('🎨 Generating AI image for news with prompt:', promptText);
+      const resData = await generateImage(promptText, '16:9', '1024x1024');
+      
+      let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!imageUrl || imageUrl.startsWith('http')) {
+        imageUrl = imageUrl || await getUnsplashImageForNews(newNews.title, newNews.category || 'Technology');
+      }
+      console.log('✅ AI Generated News Image URL:', imageUrl?.substring(0, 80));
       setNewNews(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateNewsImage:', e);
-        alert("Error generating image: " + e.message);
+        // Fallback to topic-matched Unsplash image if DALL-E limit reached
+        const fallbackUrl = await getUnsplashImageForNews(newNews.title, newNews.category || 'Technology');
+        setNewNews(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingImg(false);
     }
@@ -543,20 +546,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     setGeneratingToolImg(true);
     try {
-        // Use custom prompt as search query if provided, otherwise use tool name
-        const searchQuery = toolImagePrompt?.trim() || newTool.name || '';
-        console.log('🎨 Fetching Unsplash image for tool with query:', searchQuery);
-
-        const imageUrl = await getUnsplashImageForTool(
-          searchQuery,
-          newTool.category || 'Technology'
-        );
-
-        console.log('✅ Unsplash tool image URL:', imageUrl);
-        setNewTool(prev => ({ ...prev, imageUrl }));
+      const customPrompt = toolImagePrompt?.trim() ? ` Style/Scene hint: ${toolImagePrompt.trim()}.` : '';
+      const promptText = `Modern 3D digital UI product screenshot and mockup for "${newTool.name}", an innovative ${newTool.category || 'AI'} tool. Purpose: ${newTool.description || newTool.name}.${customPrompt} Dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality.`;
+      
+      console.log('🎨 Generating AI image for tool with prompt:', promptText);
+      const resData = await generateImage(promptText, '16:9', '1024x1024');
+      
+      let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!imageUrl || imageUrl.startsWith('http')) {
+        imageUrl = imageUrl || await getUnsplashImageForTool(newTool.name, newTool.category || 'Technology');
+      }
+      console.log('✅ AI Generated Tool Image URL:', imageUrl?.substring(0, 80));
+      setNewTool(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateToolImage:', e);
-        alert("Error generating tool image: " + e.message);
+        // Fallback to topic-matched Unsplash image if DALL-E limit reached
+        const fallbackUrl = await getUnsplashImageForTool(newTool.name, newTool.category || 'Technology');
+        setNewTool(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingToolImg(false);
     }
