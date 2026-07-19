@@ -6,6 +6,7 @@ import AdUnit from '../AdUnit';
 import { trackNewsClick } from '../../services/analyticsService';
 import { slugify } from '../../utils/authors';
 import { optimizeImageUrl } from '../../utils/imageOptimizer';
+import RssWidget from '../RssWidget';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
@@ -60,10 +61,24 @@ const getNewsCardImage = (imageUrl: string | undefined, category: string, title:
   return optimizeImageUrl(pool[Math.abs(hash) % pool.length], 800);
 };
 
-import RssWidget from '../RssWidget';
+const categoryWidgetMap: Record<string, string> = {
+  'AI Tools': 'qcY0miRbYUx7w1g5',
+  'ChatGPT': 'Kqq0lekYSjP8Hl4Z',
+  'Google Gemini': 'bF86vVzD8e0NxlNJ',
+  'OpenAI': 'Kqq0lekYSjP8Hl4Z',
+  'ai-tools': 'qcY0miRbYUx7w1g5',
+  'chatgpt': 'Kqq0lekYSjP8Hl4Z',
+  'google-gemini': 'bF86vVzD8e0NxlNJ',
+  'openai': 'Kqq0lekYSjP8Hl4Z',
+  'default': '7IXKQzxknDfEuBCS'
+};
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
   const navigate = useNavigate();
+
+  const activeWidgetId = categoryTitle 
+    ? (categoryWidgetMap[categoryTitle] || categoryWidgetMap[categoryTitle.toLowerCase()] || categoryWidgetMap.default)
+    : categoryWidgetMap.default;
 
   const openArticle = (article: NewsArticle) => {
     const slug = slugify(article.title);
@@ -87,7 +102,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
       </div>
 
       {/* RSS.app Magazine Feed Widget */}
-      <RssWidget widgetId="7IXKQzxknDfEuBCS" />
+      <RssWidget widgetId={activeWidgetId} />
 
       {articles.length === 0 ? (
         <div className="text-center py-20 bg-zinc-900/30 rounded-2xl border border-zinc-800">

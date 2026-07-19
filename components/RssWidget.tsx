@@ -23,8 +23,8 @@ const RssWidget: React.FC<RssWidgetProps> = ({
   }, []);
 
   return (
-    <div className={className}>
-      {React.createElement('rssapp-magazine', { id: widgetId })}
+    <div className={className} key={widgetId}>
+      {React.createElement('rssapp-magazine', { id: widgetId, key: widgetId })}
     </div>
   );
 };
