@@ -544,6 +544,35 @@ Return a JSON object with this EXACT structure:
         return res.json(data);
       }
 
+      case 'fetchRSS': {
+        const { rssUrl } = payload;
+        try {
+          const response = await fetch(rssUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+          const text = await response.text();
+
+          // If JSON Feed
+          if (text.trim().startsWith('{')) {
+            const json = JSON.parse(text);
+            const items = (json.items || []).slice(0, 20).map((item: any, i: number) => ({
+              id: item.id || `rss-${i}`,
+              title: item.title || '',
+              description: item.summary || item.content_html || item.content_text || '',
+              link: item.url || item.link || '#'
+            }));
+            return res.json({ items });
+          }
+
+          // If XML Feed
+          return res.json({ xml: text });
+        } catch (err: any) {
+          return res.status(500).json({ error: err.message });
+        }
+      }
+
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }

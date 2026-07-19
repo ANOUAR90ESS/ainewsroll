@@ -38,6 +38,10 @@ const callOpenAIAPI = async (action: string, payload: any) => {
   }
 };
 
+export const fetchRSSFromBackend = async (rssUrl: string): Promise<{ items?: any[]; xml?: string }> => {
+  return await callOpenAIAPI('fetchRSS', { rssUrl });
+};
+
 // --- Directory Generation ---
 export const generateDirectoryTools = async (count: number = 9, category?: string): Promise<Tool[]> => {
   const data = await callOpenAIAPI('generateDirectoryTools', { count, category });

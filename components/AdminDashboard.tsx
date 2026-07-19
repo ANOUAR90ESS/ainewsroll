@@ -596,23 +596,76 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       let items: any[] = [];
 
-      // 1) Try rss2json (tolerant, no CORS issues)
+      // 1) Direct fetch for JSON Feed (e.g. rss.app v1.1 *.json) or CORS-enabled XML
       try {
-        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
-        const data = await res.json();
-        if (data?.items?.length) {
-          items = data.items.slice(0, 10).map((item: any, i: number) => ({
-            id: `rss-json-${i}`,
-            title: item.title || '',
-            description: item.description || item.content || '',
-            link: item.link || '#'
-          }));
+        const directRes = await fetch(rssUrl);
+        if (directRes.ok) {
+          const text = await directRes.text();
+          if (text.trim().startsWith('{')) {
+            const json = JSON.parse(text);
+            if (json?.items?.length) {
+              items = json.items.slice(0, 15).map((item: any, i: number) => ({
+                id: item.id || `rss-direct-${i}`,
+                title: item.title || '',
+                description: item.summary || item.content_html || item.content_text || '',
+                link: item.url || item.link || '#'
+              }));
+            }
+          } else if (text.includes('<rss') || text.includes('<feed')) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, "text/xml");
+            items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 15).map((item, i) => ({
+              id: `rss-xml-${i}`,
+              title: item.querySelector("title")?.textContent || "",
+              description: item.querySelector("description")?.textContent || "",
+              link: item.querySelector('link')?.textContent || '#'
+            }));
+          }
         }
-      } catch (e) {
-        console.warn('rss2json fetch failed, will try allorigins xml.', e);
+      } catch (directErr) {
+        console.warn('Direct RSS fetch failed, trying backend proxy...', directErr);
       }
 
-        // 2) Fallback to allorigins (XML or CSV)
+      // 2) Try backend serverless RSS proxy (/api/openai fetchRSS)
+      if (!items.length) {
+        try {
+          const backendData = await fetchRSSFromBackend(rssUrl);
+          if (backendData?.items?.length) {
+            items = backendData.items;
+          } else if (backendData?.xml) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(backendData.xml, "text/xml");
+            items = Array.from(xmlDoc.querySelectorAll("item")).slice(0, 15).map((item, i) => ({
+              id: `rss-proxy-${i}`,
+              title: item.querySelector("title")?.textContent || "",
+              description: item.querySelector("description")?.textContent || "",
+              link: item.querySelector('link')?.textContent || '#'
+            }));
+          }
+        } catch (backendErr) {
+          console.warn('Backend RSS proxy failed, trying rss2json fallback...', backendErr);
+        }
+      }
+
+      // 3) Try rss2json fallback
+      if (!items.length) {
+        try {
+          const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
+          const data = await res.json();
+          if (data?.items?.length) {
+            items = data.items.slice(0, 10).map((item: any, i: number) => ({
+              id: `rss-json-${i}`,
+              title: item.title || '',
+              description: item.description || item.content || '',
+              link: item.link || '#'
+            }));
+          }
+        } catch (e) {
+          console.warn('rss2json fetch failed, will try allorigins xml.', e);
+        }
+      }
+
+      // 4) Fallback to allorigins (XML or CSV)
       if (!items.length) {
         try {
                  const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`);
