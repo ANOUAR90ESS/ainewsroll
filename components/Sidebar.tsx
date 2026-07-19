@@ -46,10 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-zinc-800 flex items-center gap-3">
              <img 
-               src="/logo.webp" 
-               alt="AI News-Roll Logo" 
-               width="40"
-               height="40"
+               src="/favicon.svg?v=20260719" 
                className="w-10 h-10 rounded-lg"
                loading="eager"
              />
