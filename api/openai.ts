@@ -57,97 +57,89 @@ Return JSON array of slides with this structure: [{"title": "string", "content":
       }
 
       case 'generateImage': {
-        const { prompt, aspectRatio = '16:9', size = '1024x1024' } = payload;
+        const { prompt, aspectRatio = '16:9' } = payload;
+        const cleanPrompt = (prompt || 'Modern AI software interface design, 3d digital render, high tech')
+          .substring(0, 900)
+          .replace(/[\n\r]+/g, ' ');
 
+        let imageUrl = '';
+
+        // 1) Try DALL-E 3
         try {
-          // Map aspect ratio to DALL-E sizes
           let imageSize: "1024x1024" | "1792x1024" | "1024x1792" = "1024x1024";
-          if (aspectRatio === '16:9') {
-            imageSize = "1792x1024";
-          } else if (aspectRatio === '9:16') {
-            imageSize = "1024x1792";
-          }
+          if (aspectRatio === '16:9') imageSize = "1792x1024";
+          else if (aspectRatio === '9:16') imageSize = "1024x1792";
 
-          const imageResponse = await openai.images.generate({
+          const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: prompt,
+            prompt: cleanPrompt,
             size: imageSize,
             quality: "standard",
             n: 1,
           });
 
-          const imageUrl = imageResponse.data?.[0]?.url;
-
+          imageUrl = response.data?.[0]?.url || '';
           if (imageUrl) {
-            console.log('✅ DALL-E 3 generated image successfully');
-            return res.json({
-              candidates: [
-                {
-                  content: {
-                    parts: [
-                      {
-                        inlineData: {
-                          data: imageUrl,
-                          mimeType: 'text/url'
-                        }
-                      }
-                    ]
-                  }
-                }
-              ]
-            });
+            console.log('✅ OpenAI DALL-E 3 generated image successfully!');
           }
+        } catch (dalle3Err: any) {
+          console.warn('⚠️ DALL-E 3 attempt failed:', dalle3Err.message, 'Trying DALL-E 2 fallback...');
 
-          throw new Error('No image URL in DALL-E response');
-        } catch (error: any) {
-          console.error('⚠️ DALL-E 3 failed, using category-based fallback:', error.message);
+          // 2) Fallback to DALL-E 2
+          try {
+            const response2 = await openai.images.generate({
+              model: "dall-e-2",
+              prompt: cleanPrompt,
+              size: "1024x1024",
+              n: 1,
+            });
+            imageUrl = response2.data?.[0]?.url || '';
+            if (imageUrl) {
+              console.log('✅ OpenAI DALL-E 2 generated image successfully!');
+            }
+          } catch (dalle2Err: any) {
+            console.error('❌ Both DALL-E 3 and DALL-E 2 failed:', dalle2Err.message);
+          }
+        }
 
-          // Category-based fallback images (high quality Unsplash)
-          const categoryImages: Record<string, string[]> = {
-            'Writing': [
-              'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Content Generation': [
-              'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1542435503-956c469947f6?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Image Generation': [
-              'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1561998338-13ad7883b20f?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Video Editing': [
-              'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1579547621869-0ddb5f237392?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Audio Production': [
-              'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Voice Synthesis': [
-              'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1589903308904-1010c2294adc?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Music Generation': [
-              'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Code Generation': [
-              'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Data Analysis': [
-              'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=1280&h=720&fit=crop&q=80'
+        if (imageUrl) {
+          return res.json({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      inlineData: {
+                        data: imageUrl,
+                        mimeType: 'text/url'
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          });
+        }
+
+        // Fallback to high quality Unsplash if OpenAI image generation fails entirely
+        const fallbackUrl = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+        return res.json({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      data: fallbackUrl,
+                      mimeType: 'text/url'
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        });
+      }
             ],
             'Customer Support': [
               'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1280&h=720&fit=crop&q=80',
