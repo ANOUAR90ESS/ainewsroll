@@ -6,7 +6,6 @@ import AdUnit from '../AdUnit';
 import { trackNewsClick } from '../../services/analyticsService';
 import { slugify } from '../../utils/authors';
 import { optimizeImageUrl } from '../../utils/imageOptimizer';
-import RssWidget from '../RssWidget';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
@@ -100,9 +99,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
            </p>
         </div>
       </div>
-
-      {/* RSS.app Magazine Feed Widget */}
-      <RssWidget widgetId={activeWidgetId} />
 
       {articles.length === 0 ? (
         <div className="text-center py-20 bg-zinc-900/30 rounded-2xl border border-zinc-800">
