@@ -112,6 +112,7 @@ export const getUnsplashImage = async (query: string, width: number = 800, heigh
   }
 
   // Detect specific topic keywords with word boundaries to avoid false positives (e.g. "career" matching "car")
+  let matchedTopic = '';
   if (/\b(apple|macbook|iphone|mac)\b/i.test(cleanQuery)) matchedTopic = 'apple';
   else if (/\b(tesla|supercharger)\b/i.test(cleanQuery) || /\b(electric car|ev car)\b/i.test(cleanQuery)) matchedTopic = 'tesla';
   else if (/\b(chip|nvidia|intel|gpu|processor|hardware|semiconductor)\b/i.test(cleanQuery)) matchedTopic = 'chip';
