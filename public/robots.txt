@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /news/
+Allow: /news/category/
+Allow: /category/
+Allow: /tools/
+Allow: /tools/free
+Allow: /tools/paid
+Allow: /tools/latest
+Disallow: /admin
+Disallow: /analytics
+Disallow: /api/
+
+Sitemap: https://ainewsroll.space/sitemap.xml
