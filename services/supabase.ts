@@ -23,8 +23,8 @@ const getEnvVar = (key: string): string => {
   return '';
 };
 
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL');
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY');
 
 // Check if configured (truthy & non-empty)
 export const isSupabaseConfigured = !!supabaseUrl && !!supabaseKey;

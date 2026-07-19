@@ -848,7 +848,7 @@ const App: React.FC = () => {
                     <div>
                         <h4 className="text-emerald-400 font-bold text-sm">Connect Supabase</h4>
                         <p className="text-emerald-200/70 text-sm mt-1">
-                            To save data to the cloud, update <code className="bg-black/30 px-1 rounded">services/supabase.ts</code> with your project credentials.
+                            To save data to the cloud, set your Supabase env vars in Vercel or local <code className="bg-black/30 px-1 rounded">.env</code> (<code className="bg-black/30 px-1 rounded">VITE_SUPABASE_URL</code> and <code className="bg-black/30 px-1 rounded">VITE_SUPABASE_ANON_KEY</code>).
                         </p>
                     </div>
                 </div>
