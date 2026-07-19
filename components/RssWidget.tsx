@@ -7,7 +7,7 @@ interface RssWidgetProps {
 
 const RssWidget: React.FC<RssWidgetProps> = ({
   widgetId = '7IXKQzxknDfEuBCS',
-  className = 'w-full my-6 min-h-[160px] sm:min-h-[200px] overflow-hidden rounded-xl bg-zinc-900/50 border border-zinc-800 p-2'
+  className = 'w-full my-6 min-h-[160px] sm:min-h-[200px] overflow-hidden rounded-xl bg-zinc-950 border border-zinc-800 p-2 rssapp-dark-wrapper'
 }) => {
   useEffect(() => {
     const scriptUrl = 'https://widget.rss.app/v1/magazine.js';
@@ -23,7 +23,7 @@ const RssWidget: React.FC<RssWidgetProps> = ({
   }, []);
 
   return (
-    <div className={className} key={widgetId}>
+    <div className={`rssapp-dark-wrapper ${className}`} key={widgetId}>
       {React.createElement('rssapp-magazine', { id: widgetId, key: widgetId })}
     </div>
   );

@@ -22,3 +22,15 @@ body {
   font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
+/* RSS.app Widget Dark Mode Integration */
+.rssapp-dark-wrapper {
+  background-color: #09090b;
+  border-radius: 0.75rem;
+}
+
+.rssapp-dark-wrapper rssapp-magazine,
+.rssapp-dark-wrapper iframe {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.1);
+  border-radius: 0.75rem;
+}
+
