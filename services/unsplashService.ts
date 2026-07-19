@@ -111,18 +111,17 @@ export const getUnsplashImage = async (query: string, width: number = 800, heigh
     }
   }
 
-  // Detect specific topic keywords
-  let matchedTopic = '';
-  if (cleanQuery.includes('apple') || cleanQuery.includes('macbook') || cleanQuery.includes('iphone') || cleanQuery.includes('mac')) matchedTopic = 'apple';
-  else if (cleanQuery.includes('tesla') || cleanQuery.includes('car') || cleanQuery.includes('ev') || cleanQuery.includes('charging') || cleanQuery.includes('supercharger')) matchedTopic = 'tesla';
-  else if (cleanQuery.includes('chip') || cleanQuery.includes('nvidia') || cleanQuery.includes('intel') || cleanQuery.includes('gpu') || cleanQuery.includes('processor') || cleanQuery.includes('hardware')) matchedTopic = 'chip';
-  else if (cleanQuery.includes('robot') || cleanQuery.includes('drone') || cleanQuery.includes('robotics')) matchedTopic = 'robotics';
-  else if (cleanQuery.includes('code') || cleanQuery.includes('coding') || cleanQuery.includes('developer') || cleanQuery.includes('programming')) matchedTopic = 'code';
-  else if (cleanQuery.includes('data') || cleanQuery.includes('chart') || cleanQuery.includes('analytic') || cleanQuery.includes('stat')) matchedTopic = 'data';
-  else if (cleanQuery.includes('audio') || cleanQuery.includes('sound') || cleanQuery.includes('music') || cleanQuery.includes('voice')) matchedTopic = 'audio';
-  else if (cleanQuery.includes('video') || cleanQuery.includes('edit') || cleanQuery.includes('movie') || cleanQuery.includes('image') || cleanQuery.includes('picture')) matchedTopic = 'video';
-  else if (cleanQuery.includes('write') || cleanQuery.includes('writing') || cleanQuery.includes('text') || cleanQuery.includes('blog')) matchedTopic = 'writing';
-  else if (cleanQuery.includes('business') || cleanQuery.includes('startup') || cleanQuery.includes('company')) matchedTopic = 'business';
+  // Detect specific topic keywords with word boundaries to avoid false positives (e.g. "career" matching "car")
+  if (/\b(apple|macbook|iphone|mac)\b/i.test(cleanQuery)) matchedTopic = 'apple';
+  else if (/\b(tesla|supercharger)\b/i.test(cleanQuery) || /\b(electric car|ev car)\b/i.test(cleanQuery)) matchedTopic = 'tesla';
+  else if (/\b(chip|nvidia|intel|gpu|processor|hardware|semiconductor)\b/i.test(cleanQuery)) matchedTopic = 'chip';
+  else if (/\b(robot|drone|robotics|automation)\b/i.test(cleanQuery)) matchedTopic = 'robotics';
+  else if (/\b(code|coding|developer|programming|software)\b/i.test(cleanQuery)) matchedTopic = 'code';
+  else if (/\b(data|chart|analytics|stat|statistics|database)\b/i.test(cleanQuery)) matchedTopic = 'data';
+  else if (/\b(audio|sound|music|voice|speech|podcast)\b/i.test(cleanQuery)) matchedTopic = 'audio';
+  else if (/\b(video|movie|cinema|film)\b/i.test(cleanQuery)) matchedTopic = 'video';
+  else if (/\b(writing|article|blog|text|author)\b/i.test(cleanQuery)) matchedTopic = 'writing';
+  else if (/\b(business|startup|company|innovation|market|economy|spain|argentina|tech)\b/i.test(cleanQuery)) matchedTopic = 'business';
 
   const pool = matchedTopic ? photoLibrary[matchedTopic] : globalPool;
 

@@ -511,28 +511,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleGenerateNewsImage = async () => {
-    if (!newNews.title) {
-        alert("Please enter a title first to generate an image.");
+    // Extract topic text from prompt input, title, or content
+    const promptInput = newsImagePrompt?.trim() || '';
+    const articleTitle = newNews.title?.trim() || '';
+    const articleContent = newNews.content?.trim() || newNews.description?.trim() || '';
+
+    // Extract first 200 chars of meaningful topic text
+    const topicText = articleTitle || promptInput.slice(0, 200) || articleContent.slice(0, 200);
+
+    if (!topicText) {
+        alert("Please enter an article title, prompt description, or content first.");
         return;
     }
+
     setGeneratingImg(true);
     try {
-      const customPrompt = newsImagePrompt?.trim() ? ` Style/Scene hint: ${newsImagePrompt.trim()}.` : '';
-      const promptText = `High-resolution editorial feature illustration for news article: "${newNews.title}". Category: ${newNews.category || 'Technology'}.${customPrompt} Professional 8k quality, cinematic lighting, modern digital art.`;
+      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
+      const promptText = `Modern high-resolution editorial illustration for tech article: "${cleanTopic}". Category: ${newNews.category || 'Technology'}. Professional 8k quality, cinematic lighting, sleek digital art.`;
       
       console.log('🎨 Generating AI image for news with prompt:', promptText);
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForNews(newNews.title, newNews.category || 'Technology');
+        imageUrl = imageUrl || await getUnsplashImageForNews(cleanTopic, newNews.category || 'Technology');
       }
       console.log('✅ AI Generated News Image URL:', imageUrl?.substring(0, 80));
       setNewNews(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateNewsImage:', e);
-        // Fallback to topic-matched Unsplash image if DALL-E limit reached
-        const fallbackUrl = await getUnsplashImageForNews(newNews.title, newNews.category || 'Technology');
+        const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').slice(0, 100);
+        const fallbackUrl = await getUnsplashImageForNews(cleanTopic, newNews.category || 'Technology');
         setNewNews(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingImg(false);
@@ -540,28 +549,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleGenerateToolImage = async () => {
-    if (!newTool.name) {
-        alert("Please enter a tool name first to generate an image.");
+    const promptInput = toolImagePrompt?.trim() || '';
+    const toolName = newTool.name?.trim() || '';
+    const toolDesc = newTool.description?.trim() || '';
+
+    const topicText = toolName || promptInput.slice(0, 200) || toolDesc.slice(0, 200);
+
+    if (!topicText) {
+        alert("Please enter a tool name, prompt description, or description first.");
         return;
     }
+
     setGeneratingToolImg(true);
     try {
-      const customPrompt = toolImagePrompt?.trim() ? ` Style/Scene hint: ${toolImagePrompt.trim()}.` : '';
-      const promptText = `Modern 3D digital UI product screenshot and mockup for "${newTool.name}", an innovative ${newTool.category || 'AI'} tool. Purpose: ${newTool.description || newTool.name}.${customPrompt} Dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality.`;
+      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
+      const promptText = `Modern 3D digital UI product screenshot and mockup for "${cleanTopic}", an innovative ${newTool.category || 'AI'} tool. Dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality.`;
       
       console.log('🎨 Generating AI image for tool with prompt:', promptText);
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForTool(newTool.name, newTool.category || 'Technology');
+        imageUrl = imageUrl || await getUnsplashImageForTool(cleanTopic, newTool.category || 'Technology');
       }
       console.log('✅ AI Generated Tool Image URL:', imageUrl?.substring(0, 80));
       setNewTool(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateToolImage:', e);
-        // Fallback to topic-matched Unsplash image if DALL-E limit reached
-        const fallbackUrl = await getUnsplashImageForTool(newTool.name, newTool.category || 'Technology');
+        const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').slice(0, 100);
+        const fallbackUrl = await getUnsplashImageForTool(cleanTopic, newTool.category || 'Technology');
         setNewTool(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingToolImg(false);
