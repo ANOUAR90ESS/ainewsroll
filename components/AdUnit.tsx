@@ -30,11 +30,18 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
     
     const loadAd = () => {
       try {
-        // @ts-ignore - Push ad to AdSense queue
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        setLoaded(true);
-      } catch (e) {
-        console.error('AdSense error:', e);
+        const insElement = adRef.current;
+        if (insElement && !insElement.getAttribute('data-adsbygoogle-status')) {
+          // @ts-ignore - Push ad to AdSense queue
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+          setLoaded(true);
+        }
+      } catch (e: any) {
+        // Ignore harmless React re-render AdSense duplicates
+        if (e?.message?.includes?.("All 'ins' elements") || e?.name === 'TagError') {
+          return;
+        }
+        console.warn('AdSense notice:', e);
         setLoaded(false);
       }
     };
