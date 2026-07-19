@@ -1,6 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, Tag, Sparkles, Heart, BookOpen } from 'lucide-react';
+import { ExternalLink, Tag, Heart, BookOpen } from 'lucide-react';
 import { Tool } from '../types';
 import ToolInsightModal from './ToolInsightModal';
 import { trackToolDetailView, trackToolVisit } from '../services/analyticsService';
@@ -109,7 +109,6 @@ const ToolCard: React.FC<ToolCardProps> = ({
           {imageError && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <div className="text-center">
-                <Sparkles className="w-12 h-12 text-zinc-100 mx-auto mb-2" />
                 <p className="text-zinc-200 text-sm font-medium">{tool.category}</p>
               </div>
             </div>

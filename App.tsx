@@ -18,8 +18,7 @@ const PaymentPage = lazy(() => import('./components/PaymentPage'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
 const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
 const ToolDetail = lazy(() => import('./components/ToolDetail'));
-const CoursesPage = lazy(() => import('./components/CoursesPage'));
-const CoursePage = lazy(() => import('./components/CoursePage'));
+
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/openaiService';
 import {
@@ -55,8 +54,6 @@ const App: React.FC = () => {
   const pathToView = (pathname: string): AppView => {
     if (pathname.startsWith('/tool/')) return AppView.TOOL_DETAIL;
     if (pathname.startsWith('/category/')) return AppView.CATEGORY;
-    if (pathname.startsWith('/courses/')) return AppView.COURSE_DETAIL;
-    if (pathname === '/courses') return AppView.COURSES;
     if (pathname === '/' || pathname === '/directory') return AppView.HOME;
     if (pathname === '/tools/free') return AppView.FREE_TOOLS;
     if (pathname === '/tools/paid') return AppView.PAID_TOOLS;
@@ -1077,16 +1074,7 @@ const App: React.FC = () => {
                   <GenericPage pageId={currentPageId} onBack={() => navigate('/')} />
                 </Suspense>
               )}
-              {currentView === AppView.COURSES && (
-                <Suspense fallback={<LoadingFallback />}>
-                  <CoursesPage />
-                </Suspense>
-              )}
-              {currentView === AppView.COURSE_DETAIL && (
-                <Suspense fallback={<LoadingFallback />}>
-                  <CoursePage />
-                </Suspense>
-              )}
+
             </div>
 
             <Footer onNavigate={handleNavigation} />
