@@ -15,9 +15,9 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-4 col-span-2 md:col-span-1">
             <div className="flex items-center gap-2">
               <img 
-                src="/android-chrome-512x512.png" 
+                src="/web-app-manifest-512x512.png" 
                 alt="AI News-Roll Logo" 
-                className="w-10 h-10 rounded-lg"
+                className="w-10 h-10 rounded-lg object-contain bg-zinc-900"
               />
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
                 AI News-Roll

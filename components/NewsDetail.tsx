@@ -32,8 +32,19 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
   const articleSlug = useMemo(() => slugify(article.title), [article.title]);
   const articleUrl = `https://ainewsroll.space/news/${articleSlug}`;
 
-  // Optimize image URL for page speed (WebP format, width 1200)
-  const optimizedImgUrl = useMemo(() => optimizeImageUrl(article.imageUrl, 1200), [article.imageUrl]);
+  // Optimize image URL for page speed (WebP format, width 1200) with robust fallback
+  const optimizedImgUrl = useMemo(() => {
+    if (article.imageUrl && !article.imageUrl.includes('source.unsplash.com') && !article.imageUrl.includes('picsum.photos')) {
+      return optimizeImageUrl(article.imageUrl, 1200);
+    }
+    const pool = [
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80'
+    ];
+    const hash = (article.title || 'news').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return optimizeImageUrl(pool[hash % pool.length], 1200);
+  }, [article.imageUrl, article.title]);
   const optimizedAuthorImg = useMemo(() => optimizeImageUrl(author.avatar, 200), [author.avatar]);
 
   // Split content by paragraphs

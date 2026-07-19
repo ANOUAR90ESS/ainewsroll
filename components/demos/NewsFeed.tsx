@@ -12,6 +12,42 @@ interface NewsFeedProps {
   categoryTitle?: string;
 }
 
+const newsFallbackImages: Record<string, string[]> = {
+  'AI Tools': [
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80'
+  ],
+  ChatGPT: [
+    'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80'
+  ],
+  OpenAI: [
+    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1280&h=720&fit=crop&q=80'
+  ],
+  Robotics: [
+    'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1561557944-6e7860d1a7eb?w=1280&h=720&fit=crop&q=80'
+  ],
+  Startups: [
+    'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1280&h=720&fit=crop&q=80'
+  ],
+  default: [
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1280&h=720&fit=crop&q=80'
+  ]
+};
+
+const getNewsCardImage = (imageUrl: string | undefined, category: string, title: string) => {
+  if (imageUrl && !imageUrl.includes('source.unsplash.com') && !imageUrl.includes('picsum.photos')) {
+    return optimizeImageUrl(imageUrl, 600);
+  }
+  const pool = newsFallbackImages[category] || newsFallbackImages.default;
+  const hash = (title || 'news').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return optimizeImageUrl(pool[hash % pool.length], 600);
+};
+
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
   const navigate = useNavigate();
 
@@ -49,12 +85,15 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
               <div key={article.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
                 <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                   <img 
-                    src={optimizeImageUrl(article.imageUrl, 600)} 
+                    src={getNewsCardImage(article.imageUrl, article.category, article.title)} 
                     alt={article.title}
                     loading="lazy"
                     width="1280"
                     height="720"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100" 
+                    onError={(e) => {
+                      e.currentTarget.src = getNewsCardImage('', article.category, article.title);
+                    }}
                   />
                   <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10 z-10">
                      {article.category || 'News'}
@@ -109,12 +148,15 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
                     <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                       <img 
-                        src={optimizeImageUrl(article.imageUrl, 600)} 
+                        src={getNewsCardImage(article.imageUrl, article.category, article.title)} 
                         alt={article.title}
                         loading="lazy"
                         width="1280"
                         height="720"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-80 group-hover:opacity-100" 
+                        onError={(e) => {
+                          e.currentTarget.src = getNewsCardImage('', article.category, article.title);
+                        }}
                       />
                       <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2 py-1 rounded text-xs font-medium text-white border border-white/10 z-10">
                          {article.category || 'News'}
