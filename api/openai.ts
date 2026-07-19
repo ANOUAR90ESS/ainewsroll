@@ -140,61 +140,6 @@ Return JSON array of slides with this structure: [{"title": "string", "content":
           ]
         });
       }
-            ],
-            'Customer Support': [
-              'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Design Tools': [
-              'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1609921212029-bb5a28e60960?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Education': [
-              'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1280&h=720&fit=crop&q=80'
-            ],
-            'Audio & Voice': [
-              'https://images.unsplash.com/photo-1589903308904-1010c2294adc?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1280&h=720&fit=crop&q=80',
-              'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=1280&h=720&fit=crop&q=80'
-            ]
-          };
-
-          let fallbackImage = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
-
-          for (const [category, images] of Object.entries(categoryImages)) {
-            if (prompt.toLowerCase().includes(category.toLowerCase())) {
-              const hash = prompt
-                .split('')
-                .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-              fallbackImage = images[hash % images.length];
-              break;
-            }
-          }
-
-          console.log(`📸 Using fallback image: ${fallbackImage}`);
-
-          return res.json({
-            candidates: [
-              {
-                content: {
-                  parts: [
-                    {
-                      inlineData: {
-                        data: fallbackImage,
-                        mimeType: 'text/url'
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          });
-        }
-      }
 
       case 'analyzeToolTrends': {
         const { tools } = payload;
