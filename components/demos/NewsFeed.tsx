@@ -13,17 +13,20 @@ interface NewsFeedProps {
 }
 
 const newsFallbackImages: Record<string, string[]> = {
-  'AI Tools': [
-    'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80'
+  apple: [
+    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1611186871348-b1ce696e52d9?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1280&h=720&fit=crop&q=80'
   ],
-  ChatGPT: [
-    'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1280&h=720&fit=crop&q=80'
+  tesla: [
+    'https://images.unsplash.com/photo-1563720223185-11003d516935?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1280&h=720&fit=crop&q=80'
   ],
-  OpenAI: [
-    'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1280&h=720&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=1280&h=720&fit=crop&q=80'
+  chip: [
+    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1591799264318-7e6e29868606?w=1280&h=720&fit=crop&q=80'
   ],
   Robotics: [
     'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1280&h=720&fit=crop&q=80',
@@ -34,7 +37,9 @@ const newsFallbackImages: Record<string, string[]> = {
     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1280&h=720&fit=crop&q=80'
   ],
   default: [
-    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80',
     'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1280&h=720&fit=crop&q=80'
   ]
 };
@@ -43,9 +48,16 @@ const getNewsCardImage = (imageUrl: string | undefined, category: string, title:
   if (imageUrl && !imageUrl.includes('source.unsplash.com') && !imageUrl.includes('picsum.photos')) {
     return optimizeImageUrl(imageUrl, 800);
   }
-  const pool = newsFallbackImages[category] || newsFallbackImages.default;
-  const hash = (title || 'news').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return optimizeImageUrl(pool[hash % pool.length], 800);
+  const cleanTitle = (title || '').toLowerCase();
+  let topic = 'default';
+  if (cleanTitle.includes('apple') || cleanTitle.includes('macbook')) topic = 'apple';
+  else if (cleanTitle.includes('tesla') || cleanTitle.includes('supercharger') || cleanTitle.includes('ev')) topic = 'tesla';
+  else if (cleanTitle.includes('chip') || cleanTitle.includes('intel') || cleanTitle.includes('nvidia') || cleanTitle.includes('hardware')) topic = 'chip';
+  else if (newsFallbackImages[category]) topic = category;
+
+  const pool = newsFallbackImages[topic] || newsFallbackImages.default;
+  const hash = (title || 'news').split('').reduce((acc, char, idx) => acc + char.charCodeAt(0) * (idx + 1), 0);
+  return optimizeImageUrl(pool[Math.abs(hash) % pool.length], 800);
 };
 
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
