@@ -54,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // getAdminClient().auth.getUser(token) works securely on the backend.
     const supabaseAdmin = getAdminClient();
 
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error: userError } = await (supabaseAdmin.auth as any).getUser(token);
 
     if (userError || !user) {
       return res.status(401).json({ error: 'Unauthorized: Invalid token' });
