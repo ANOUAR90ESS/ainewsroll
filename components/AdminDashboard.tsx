@@ -2,7 +2,7 @@ import { supabase } from '../services/supabase';
 import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic } from '../services/openaiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
 import ToolCard from './ToolCard';
@@ -826,46 +826,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-    const publishRssAsNews = async (item: any) => {
+  const publishRssAsNews = async (item: any) => {
     setProcessingId(item.id);
     try {
-      const extracted = await extractNewsFromRSSItem(item.title, item.description);
-      
-      // Strip HTML tags from description and content
       const stripHtml = (html: string) => {
         const tmp = document.createElement('DIV');
-        tmp.innerHTML = html;
+        tmp.innerHTML = html || '';
         return tmp.textContent || tmp.innerText || '';
       };
+
+      let extracted: Partial<NewsArticle> = {};
+      try {
+        extracted = await extractNewsFromRSSItem(item.title, item.description);
+      } catch (err) {
+        console.warn('AI extraction fallback:', err);
+      }
       
-      const cleanDescription = stripHtml(extracted.description || item.description).substring(0, 300).trim();
-      const cleanContent = stripHtml(extracted.content || item.description).substring(0, 1000).trim();
-      const title = (extracted.title || item.title).substring(0, 200).trim();
+      const cleanDescription = stripHtml(extracted.description || item.description || '').substring(0, 300).trim();
+      const cleanContent = stripHtml(extracted.content || item.description || '').substring(0, 1000).trim();
+      const title = (extracted.title || item.title || 'RSS News Article').substring(0, 200).trim();
       
-      // Fetch Unsplash image for article
-      const newsImageUrl = await getUnsplashImageForNews(title, extracted.category || 'Tech News');
+      const newsCategory = extracted.category || 'Tech News';
+      let newsImageUrl = extracted.imageUrl;
+      if (!newsImageUrl) {
+        try {
+          newsImageUrl = await getUnsplashImageForNews(title, newsCategory);
+        } catch (imgErr) {
+          newsImageUrl = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+        }
+      }
       
       const article: NewsArticle = {
         id: crypto.randomUUID(),
         title,
         description: cleanDescription || 'Breaking news article from RSS feed.',
-        content: cleanContent,
+        content: cleanContent || cleanDescription || title,
         source: item.link || 'RSS Feed',
         imageUrl: newsImageUrl,
-        category: extracted.category || 'Tech News',
+        category: newsCategory,
         date: new Date().toISOString()
       };
       
       console.log('Publishing news from RSS:', article);
       await onAddNews(article);
       setLastSuccess({ type: 'news', data: article });
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error publishing RSS as news:', e);
-      alert("Failed to publish news from RSS. Check console for details.");
+      alert("Failed to publish news from RSS: " + (e?.message || e));
     } finally {
       setProcessingId(null);
     }
-    };
+  };
 
   const autoImportAllNews = async () => {
     if (rssItems.length === 0) {

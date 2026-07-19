@@ -322,12 +322,24 @@ export const extractToolFromRSSItem = async (title: string, description: string)
 };
 
 export const extractNewsFromRSSItem = async (title: string, description: string): Promise<Partial<NewsArticle>> => {
-  const data = await callOpenAIAPI('extractNewsFromRSS', { title, description });
-  const article = data.article || {};
-  if (!article.imageUrl || article.imageUrl.includes('source.unsplash.com') || article.imageUrl.includes('picsum.photos')) {
-    article.imageUrl = await getUnsplashImageForNews(article.title || title, article.category || 'Technology');
+  try {
+    const data = await callOpenAIAPI('extractNewsFromRSS', { title, description });
+    const article = data.article || {};
+    if (!article.imageUrl || article.imageUrl.includes('source.unsplash.com') || article.imageUrl.includes('picsum.photos')) {
+      article.imageUrl = await getUnsplashImageForNews(article.title || title, article.category || 'Technology');
+    }
+    return article;
+  } catch (err) {
+    console.warn('AI news extraction failed, using RSS fallback content:', err);
+    const fallbackImage = await getUnsplashImageForNews(title, 'Technology');
+    return {
+      title: title || 'RSS Article',
+      description: (description || title).substring(0, 300),
+      content: (description || title).substring(0, 1000),
+      category: 'Tech News',
+      imageUrl: fallbackImage,
+    };
   }
-  return article;
 };
 
 export const generateNewsFromTopic = async (topic: string): Promise<NewsArticle> => {
