@@ -91,11 +91,6 @@ const AdUnit: React.FC<AdUnitProps> = ({ format = 'horizontal', className = '', 
           <div className="w-3 h-3 bg-zinc-700 rounded-bl text-[8px] flex items-center justify-center text-zinc-400">i</div>
         </div>
       </div>
-      {!loaded && (
-        <div className="text-[10px] text-zinc-500 mt-2 text-center">
-          Provide slot via prop or set env: VITE_ADSENSE_SLOT / VITE_ADSENSE_SLOT_RSPV / VITE_ADSENSE_SLOT_MCRSPV
-        </div>
-      )}
     </div>
   );
 };

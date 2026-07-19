@@ -1,0 +1,16 @@
+# AI News-Roll
+
+> The premier directory for 1000+ AI tools, breaking AI news, and industry analysis.
+
+## Key Resources
+- [Latest AI News](https://ainewsroll.space/news): Comprehensive coverage of artificial intelligence developments.
+- [Free AI Tools](https://ainewsroll.space/tools/free): Curated catalog of zero-cost generative AI tools.
+- [Paid AI Tools](https://ainewsroll.space/tools/paid): Premium AI software and enterprise solutions.
+- [AI Tool Directory](https://ainewsroll.space/): Complete listing of artificial intelligence applications.
+
+## Categories
+- [AI Tools](https://ainewsroll.space/news/category/ai-tools)
+- [ChatGPT & OpenAI](https://ainewsroll.space/news/category/chatgpt)
+- [Google Gemini](https://ainewsroll.space/news/category/google-gemini)
+- [Robotics](https://ainewsroll.space/news/category/robotics)
+- [Startups](https://ainewsroll.space/news/category/startups)

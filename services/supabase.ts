@@ -50,8 +50,9 @@ export const supabase = isSupabaseConfigured
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       },
       realtime: {
+        timeout: 2000,
         params: {
-          eventsPerSecond: 10,
+          eventsPerSecond: 2,
         },
       },
     })

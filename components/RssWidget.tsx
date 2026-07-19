@@ -7,7 +7,7 @@ interface RssWidgetProps {
 
 const RssWidget: React.FC<RssWidgetProps> = ({
   widgetId = '7IXKQzxknDfEuBCS',
-  className = 'w-full my-6 overflow-hidden rounded-xl bg-zinc-900/50 border border-zinc-800 p-2'
+  className = 'w-full my-6 min-h-[160px] sm:min-h-[200px] overflow-hidden rounded-xl bg-zinc-900/50 border border-zinc-800 p-2'
 }) => {
   useEffect(() => {
     const scriptUrl = 'https://widget.rss.app/v1/magazine.js';

@@ -136,7 +136,11 @@ export const subscribeToTools = (callback: (tools: Tool[]) => void) => {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' }, () => {
         fetchTools();
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('Tools realtime channel offline, polling active');
+      }
+    });
 
   return () => {
     supabase!.removeChannel(channel);
@@ -223,7 +227,11 @@ export const subscribeToNews = (callback: (news: NewsArticle[]) => void) => {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
         fetchNews();
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('News realtime channel offline, polling active');
+      }
+    });
 
   return () => {
     supabase!.removeChannel(channel);
