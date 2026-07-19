@@ -253,11 +253,13 @@ Return a JSON object with: name, description, category, tags (array), price`;
 
       case 'extractNewsFromRSS': {
         const { title, description } = payload;
-        const prompt = `Analyze this RSS feed item and extract structured data to create a News Article.
+        const prompt = `You are a senior tech news editor. Analyze this RSS feed item and expand it into a complete, in-depth, long-form news article (800 to 1200 words).
 Title: ${title}
 Description: ${description}
 
-Return a JSON object with: title, description, content`;
+REQUIREMENTS:
+- Expand the story into a full, detailed article with background context, technical analysis, industry implications, and structured Markdown sections (##, ###).
+- Return a JSON object with: title, description, content, category.`;
 
         const response = await openai.chat.completions.create({
           model: 'gpt-4o',
@@ -299,10 +301,23 @@ Return a JSON object with: title, description, content`;
 
         const headlines = contextItems.map((i, idx) => `${idx + 1}. ${i.title} — ${i.description}`).join("\n");
 
-        const prompt = `You are a concise tech news editor. Using the context below, craft a fresh article about the topic: "${topic}".
-Context headlines:\n${headlines || 'No external context available, rely on general knowledge about the topic.'}
+        const prompt = `You are a senior tech journalist and editor. Using the context headlines below, write an IN-DEPTH, COMPREHENSIVE long-form news article (1000 to 1500 words) about the topic: "${topic}".
+Context headlines:
+${headlines || 'No external context available, rely on extensive general knowledge and deep technical analysis of the topic.'}
 
-Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), content (3-5 short paragraphs, Markdown OK), source (string), category (string).`;
+CRITICAL INSTRUCTIONS FOR ARTICLE LENGTH & STRUCTURE:
+- The article MUST be a comprehensive, long-form piece of around 1000-1500 words. DO NOT write brief summaries.
+- Structure the content into multiple rich sections using Markdown headings (## and ###).
+- Sections to include:
+  1. ## Introduction & Executive Summary
+  2. ## Background & Technological Context
+  3. ## Detailed Breakdown & Key Innovations
+  4. ## Market Impact & Industry Reactions
+  5. ## Future Outlook & What Lies Ahead
+  6. ## Key Takeaways / Conclusion
+- Write in a professional, engaging, highly informative tone with concrete analysis.
+
+Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), content (full 1000+ words article content formatted in Markdown), source (string), category (string).`;
 
         const response = await openai.chat.completions.create({
           model: 'gpt-4o',
@@ -314,8 +329,7 @@ Return JSON with: title (engaging, <=120 chars), description (1-2 sentences), co
         return res.json({
           article: {
             ...article,
-            imageUrl: `https://source.unsplash.com/1200x630/?${encodeURIComponent(topic + ' technology news')}`,
-            source: article.source || 'Google News',
+            source: article.source || 'AI News-Roll Editorial',
             category: article.category || 'AI News'
           }
         });
@@ -499,12 +513,12 @@ Keep it natural, conversational, and enthusiastic.`;
           model: 'gpt-4o',
           messages: [{
             role: 'user',
-            content: `You are a news aggregator. Find and provide ${count} recent, REAL news articles about ${category} from the past 24-48 hours.
+            content: `You are a senior tech news aggregator and editor. Find and write ${count} recent, REAL in-depth news articles about ${category} from the past 24-48 hours.
 
-IMPORTANT: These MUST be actual, current news stories that are happening now or very recently. Include:
-- Real company names, people, dates, and specific facts
-- Actual events that can be verified
-- Current developments in ${category}
+IMPORTANT REQUIREMENTS:
+- Each article MUST be a full-length, comprehensive long-form piece (800-1200 words).
+- Include real company names, people, dates, verifiable facts, and current developments.
+- Divide each article content into structured sections using Markdown headings (##, ###).
 
 Return a JSON object with this EXACT structure:
 {
@@ -512,15 +526,13 @@ Return a JSON object with this EXACT structure:
     {
       "title": "Article title here",
       "summary": "2-3 sentence summary",
-      "description": "2-3 sentence summary (same as summary)",
-      "content": "Full article content (4-5 paragraphs, 400-500 words with real details)",
+      "description": "2-3 sentence summary",
+      "content": "Full detailed article content (800-1200 words divided into clear sections with ## and ### headings, background context, technical analysis, and conclusions)",
       "source": "Real news outlet name (TechCrunch, The Verge, Reuters, etc.)",
       "tags": ["tag1", "tag2", "tag3"]
     }
   ]
-}
-
-Make sure these are REAL stories from real news sources with actual dates, company names, product names, and verifiable facts.`
+}`
           }],
           response_format: { type: "json_object" },
           temperature: 0.7

@@ -320,17 +320,29 @@ export const generateMultiSpeakerSpeech = async (script: string, speaker1Config:
 
 export const extractToolFromRSSItem = async (title: string, description: string): Promise<Partial<Tool>> => {
   const data = await callOpenAIAPI('extractToolFromRSS', { title, description });
-  return data.tool || {};
+  const tool = data.tool || {};
+  if (!tool.imageUrl || tool.imageUrl.includes('source.unsplash.com') || tool.imageUrl.includes('picsum.photos')) {
+    tool.imageUrl = await getUnsplashImageForTool(tool.name || title, tool.category || 'Technology');
+  }
+  return tool;
 };
 
 export const extractNewsFromRSSItem = async (title: string, description: string): Promise<Partial<NewsArticle>> => {
   const data = await callOpenAIAPI('extractNewsFromRSS', { title, description });
-  return data.article || {};
+  const article = data.article || {};
+  if (!article.imageUrl || article.imageUrl.includes('source.unsplash.com') || article.imageUrl.includes('picsum.photos')) {
+    article.imageUrl = await getUnsplashImageForNews(article.title || title, article.category || 'Technology');
+  }
+  return article;
 };
 
 export const generateNewsFromTopic = async (topic: string): Promise<NewsArticle> => {
   const data = await callOpenAIAPI('generateNewsFromTopic', { topic });
-  return data.article || {} as NewsArticle;
+  const article = data.article || {} as NewsArticle;
+  if (!article.imageUrl || article.imageUrl.includes('source.unsplash.com') || article.imageUrl.includes('picsum.photos')) {
+    article.imageUrl = await getUnsplashImageForNews(article.title || topic, article.category || 'AI News');
+  }
+  return article;
 };
 
 export const generateToolSlides = async (tool: Tool): Promise<Slide[]> => {
@@ -351,42 +363,33 @@ export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
 // --- Generate Image for Tool ---
 export const generateImageForTool = async (toolName: string, toolDescription: string, category: string): Promise<string> => {
   try {
-    // Create DETAILED descriptive prompt using ALL available information with uniqueness factors
-    const uniqueSeed = Date.now();
-    const styleVariations = ['modern interface', 'sleek dashboard', 'professional mockup', 'futuristic display', 'clean design'];
+    const styleVariations = ['modern interface dashboard', 'sleek product mockup', 'futuristic UI display', 'clean dark mode design'];
     const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
     
-    const imagePrompt = `Create a ${randomStyle} for "${toolName}" - a ${category} AI tool. EXACT FUNCTIONALITY: ${toolDescription}. Show the SPECIFIC features described: ${toolDescription}. Make it visually distinct and unique. High-quality, tech-focused, vibrant colors. UNIQUE SEED: ${uniqueSeed}. IMPORTANT: This must look completely different from other ${category} tools.`;
+    const imagePrompt = `A high-resolution, modern 3D digital UI product screenshot and mockup for "${toolName}", an innovative ${category} AI tool. Purpose: ${toolDescription}. Style: ${randomStyle}, dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality, realistic workspace interface.`;
 
-    // Generate image with Gemini
     const imageData = await callOpenAIAPI('generateImage', {
       prompt: imagePrompt,
       aspectRatio: '16:9',
       size: '1K'
     });
 
-    // Extract image data from response
     const imageInlineData = imageData?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
 
     if (imageInlineData) {
       const { data, mimeType } = imageInlineData;
 
-      // Check if it's a base64 image or URL
       if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
-        // Base64 image from AI - convert to data URL
         return `data:${mimeType};base64,${data}`;
-      } else {
-        // It's a URL (Unsplash fallback)
+      } else if (data && !data.includes('source.unsplash.com') && !data.includes('picsum.photos')) {
         return data;
       }
     }
 
-    // Fallback to Unsplash if no image generated
-    throw new Error('No image generated');
+    return await getUnsplashImageForTool(toolName, category);
   } catch (error) {
-    console.error('Failed to generate image with Gemini:', error);
-    // Fallback to Unsplash with better keywords
-    return `https://source.unsplash.com/1200x630/?${category.toLowerCase()},technology,${toolName.split(' ')[0].toLowerCase()}`;
+    console.error('Failed to generate image for tool:', error);
+    return await getUnsplashImageForTool(toolName, category);
   }
 };
 
