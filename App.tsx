@@ -338,9 +338,9 @@ const App: React.FC = () => {
 
             const result = await response.json();
             logger.log('✅ Tool added via admin API:', result);
-        } else {
-            setTools((prev: Tool[]) => [tool, ...prev]);
         }
+        // Always update React state so UI updates immediately
+        setTools((prev: Tool[]) => [tool, ...prev.filter((t: Tool) => t.id !== tool.id)]);
     } catch (e: any) {
         logger.error("Error adding tool", e);
         alert(`Failed to save tool: ${e.message}`);
@@ -369,9 +369,8 @@ const App: React.FC = () => {
 
             const result = await response.json();
             logger.log('✅ Tool updated via admin API:', result);
-        } else {
-            setTools((prev: Tool[]) => prev.map((t: Tool) => t.id === id ? { ...tool, id } : t));
         }
+        setTools((prev: Tool[]) => prev.map((t: Tool) => t.id === id ? { ...tool, id } : t));
     } catch (e: any) {
         logger.error("Error updating tool", e);
         alert(`Failed to update tool: ${e.message}`);
@@ -404,11 +403,9 @@ const App: React.FC = () => {
 
             const result = await response.json();
             logger.log('✅ News added via admin API:', result);
-        } else {
-            logger.log('Supabase not configured, saving to local state');
-            setNews((prev: NewsArticle[]) => [article, ...prev]);
         }
-        navigate('/news');
+        // Always update React state so UI updates immediately
+        setNews((prev: NewsArticle[]) => [article, ...prev.filter((a: NewsArticle) => a.id !== article.id)]);
     } catch (e: any) {
         logger.error("Error adding news", e);
         alert(`Failed to save news: ${e.message}`);

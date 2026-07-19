@@ -188,16 +188,16 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
 
           // Check if it's a URL (fallback) or base64
           if (mimeType === 'text/url') {
-            imageUrl = data;
-            console.log(`📸 Using fallback URL for ${t.name}`);
+            imageUrl = await getUnsplashImageForTool(t.name, t.category);
+            console.log(`📸 Using Unsplash image for ${t.name}`);
           } else if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
             // Base64 image from AI - check size
             const sizeInKB = (data.length * 3) / 4 / 1024;
 
             if (sizeInKB > 500) {
               // Image too large, use category-based image
-              console.warn(`⚠️ AI image for ${t.name} is too large (${sizeInKB.toFixed(0)}KB), using category fallback`);
-              imageUrl = categoryImages[t.category] || 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+              console.warn(`⚠️ AI image for ${t.name} is too large (${sizeInKB.toFixed(0)}KB), using Unsplash fallback`);
+              imageUrl = await getUnsplashImageForTool(t.name, t.category);
             } else {
               // Use base64 image
               imageUrl = `data:${mimeType};base64,${data}`;
@@ -206,23 +206,12 @@ export const generateDirectoryTools = async (count: number = 9, category?: strin
           }
         }
       } catch (aiError) {
-        console.warn(`⚠️ AI image generation failed for ${t.name}, using category fallback:`, aiError);
+        console.warn(`⚠️ AI image generation failed for ${t.name}, using Unsplash fallback:`, aiError);
       }
 
       // Final fallback to category-based image
       if (!imageUrl) {
-        // Use hash of tool name to get consistent but varied image
-        const images = categoryImages[t.category] || [
-          'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1280&h=720&fit=crop&q=80',
-          'https://images.unsplash.com/photo-1655393001768-d946c97d6fd1?w=1280&h=720&fit=crop&q=80'
-        ];
-        
-        // Create hash from tool name for consistent selection
-        const hash = t.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-        imageUrl = images[hash % images.length];
-        
-        console.log(`📸 Using category fallback for ${t.name}: ${t.category} (variant ${(hash % images.length) + 1}/${images.length})`);
+        imageUrl = await getUnsplashImageForTool(t.name, t.category);
       }
 
       const toolWithImage = {
