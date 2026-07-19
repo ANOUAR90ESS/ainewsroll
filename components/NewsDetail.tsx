@@ -201,12 +201,15 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
 
       <article className="bg-zinc-900/40 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
         {/* Banner Image */}
-        <div className="relative h-64 md:h-96 w-full overflow-hidden">
+        <div className="relative h-80 sm:h-96 md:h-[460px] w-full overflow-hidden">
           <img 
             src={optimizedImgUrl} 
             alt={article.title} 
             loading="eager"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
         </div>
