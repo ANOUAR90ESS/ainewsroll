@@ -134,18 +134,7 @@ const ToolCard: React.FC<ToolCardProps> = ({
             </button>
           )}
 
-          <button
-            type="button"
-             onClick={(e) => {
-               e.preventDefault();
-               setShowModal(true);
-               trackToolDetailView(tool.name, tool.category);
-             }}
-             className="absolute bottom-3 left-3 bg-indigo-600/90 hover:bg-indigo-500 backdrop-blur text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0"
-             title="AI Explain"
-          >
-            <Sparkles className="w-4 h-4" />
-          </button>
+
         </div>
         
         <div className="p-5 flex flex-col flex-1">
