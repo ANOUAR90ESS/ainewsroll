@@ -789,12 +789,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const cleanContent = stripHtml(extracted.content || item.description).substring(0, 1000).trim();
       const title = (extracted.title || item.title).substring(0, 200).trim();
       
-      // Generate AI image for the article
-      const newsImageUrl = await generateImage(
-        `Create a professional editorial illustration for a news article. Title: "${title}". Description: ${cleanDescription}. Style: modern, professional, news illustration.`,
-        "16:9",
-        "1K"
-      );
+      // Fetch Unsplash image for article
+      const newsImageUrl = await getUnsplashImageForNews(title, extracted.category || 'Tech News');
       
       const article: NewsArticle = {
         id: crypto.randomUUID(),
@@ -802,7 +798,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         description: cleanDescription || 'Breaking news article from RSS feed.',
         content: cleanContent,
         source: item.link || 'RSS Feed',
-        imageUrl: newsImageUrl || `https://picsum.photos/800/400?random=${Date.now()}`,
+        imageUrl: newsImageUrl,
         category: extracted.category || 'Tech News',
         date: new Date().toISOString()
       };
