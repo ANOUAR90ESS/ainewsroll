@@ -60,6 +60,8 @@ const getNewsCardImage = (imageUrl: string | undefined, category: string, title:
   return optimizeImageUrl(pool[Math.abs(hash) % pool.length], 800);
 };
 
+import RssWidget from '../RssWidget';
+
 const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
   const navigate = useNavigate();
 
@@ -83,6 +85,9 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
            </p>
         </div>
       </div>
+
+      {/* RSS.app Magazine Feed Widget */}
+      <RssWidget widgetId="7IXKQzxknDfEuBCS" />
 
       {articles.length === 0 ? (
         <div className="text-center py-20 bg-zinc-900/30 rounded-2xl border border-zinc-800">
