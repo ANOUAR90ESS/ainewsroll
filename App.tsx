@@ -18,7 +18,10 @@ const PaymentPage = lazy(() => import('./components/PaymentPage'));
 const AnalyticsDashboard = lazy(() => import('./components/AnalyticsDashboard'));
 const FavoritesPage = lazy(() => import('./components/FavoritesPage'));
 const ToolDetail = lazy(() => import('./components/ToolDetail'));
+const NewsDetail = lazy(() => import('./components/NewsDetail'));
+const AuthorPage = lazy(() => import('./components/AuthorPage'));
 
+import { slugify, authors } from './utils/authors';
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/openaiService';
 import {
@@ -58,12 +61,15 @@ const App: React.FC = () => {
     if (pathname === '/tools/free') return AppView.FREE_TOOLS;
     if (pathname === '/tools/paid') return AppView.PAID_TOOLS;
     if (pathname === '/tools/latest') return AppView.LATEST_TOOLS;
+    if (pathname.startsWith('/news/category/')) return AppView.NEWS_CATEGORY;
+    if (pathname.startsWith('/news/')) return AppView.NEWS_DETAIL;
     if (pathname === '/news') return AppView.LATEST_NEWS;
     if (pathname === '/analytics') return AppView.ANALYTICS;
     if (pathname === '/admin') return AppView.ADMIN;
     if (pathname === '/payment') return AppView.PAYMENT;
     if (pathname === '/favorites') return AppView.FAVORITES;
     if (pathname.startsWith('/page/')) return AppView.PAGES;
+    if (pathname.startsWith('/author/')) return AppView.AUTHOR;
     return AppView.HOME;
   };
 
@@ -108,6 +114,9 @@ const App: React.FC = () => {
       [AppView.FAVORITES]: 'My Favorites | AI News-Roll',
       [AppView.CATEGORY]: 'Category | AI News-Roll',
       [AppView.TOOL_DETAIL]: 'Tool Detail | AI News-Roll',
+      [AppView.NEWS_CATEGORY]: 'News Category | AI News-Roll',
+      [AppView.NEWS_DETAIL]: 'News Article | AI News-Roll',
+      [AppView.AUTHOR]: 'Author Profile | AI News-Roll',
       [AppView.COURSES]: 'AI Tool Courses | AI News-Roll',
       [AppView.COURSE_DETAIL]: 'Course | AI News-Roll'
     };
@@ -289,13 +298,18 @@ const App: React.FC = () => {
         [AppView.PAID_TOOLS]: '/tools/paid',
         [AppView.LATEST_TOOLS]: '/tools/latest',
         [AppView.LATEST_NEWS]: '/news',
+        [AppView.NEWS_CATEGORY]: pageId ? `/news/category/${pageId}` : '/news',
+        [AppView.NEWS_DETAIL]: pageId ? `/news/${pageId}` : '/news',
+        [AppView.AUTHOR]: pageId ? `/author/${pageId}` : '/news',
         [AppView.ANALYTICS]: '/analytics',
         [AppView.ADMIN]: '/admin',
         [AppView.PAYMENT]: '/payment',
         [AppView.FAVORITES]: '/favorites',
         [AppView.PAGES]: pageId ? `/page/${pageId}` : '/pages',
         [AppView.CATEGORY]: '/',
-        [AppView.TOOL_DETAIL]: '/'
+        [AppView.TOOL_DETAIL]: '/',
+        [AppView.COURSES]: pageId ? `/course/${pageId}` : '/courses',
+        [AppView.COURSE_DETAIL]: pageId ? `/course/${pageId}` : '/courses'
       };
 
       navigate(viewToPath[view]);
@@ -588,6 +602,84 @@ const App: React.FC = () => {
     }, {} as Record<string, number>);
   }, [tools]);
 
+  // Synchronize URL search parameters (?q= or ?search=)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const query = params.get('q') || params.get('search');
+    if (query && query !== searchTerm) {
+      setSearchTerm(query);
+    }
+  }, [location.search]);
+
+  // News Category & Article Path Resolvers
+  const newsCategorySlugFromPath = useMemo(() => {
+    const match = location.pathname.match(/^\/news\/category\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
+
+  const newsCategoryTitle = useMemo(() => {
+    if (!newsCategorySlugFromPath) return '';
+    const titles: Record<string, string> = {
+      'ai-tools': 'أدوات الذكاء الاصطناعي / AI Tools',
+      'chatgpt': 'شات جي بي تي / ChatGPT',
+      'google-gemini': 'جوجل جيميناي / Google Gemini',
+      'openai': 'أوبن إيه آي / OpenAI',
+      'robotics': 'الروبوتات / Robotics',
+      'startups': 'الشركات الناشئة / Startups'
+    };
+    return titles[newsCategorySlugFromPath] || newsCategorySlugFromPath.replace(/-/g, ' ');
+  }, [newsCategorySlugFromPath]);
+
+  const filteredNews = useMemo(() => {
+    if (currentView === AppView.LATEST_NEWS) return news;
+    if (currentView !== AppView.NEWS_CATEGORY || !newsCategorySlugFromPath) return news;
+
+    const keywordsMap: Record<string, string[]> = {
+      'ai-tools': ['tool', 'tools', 'أداة', 'أدوات', 'directory', 'دليل'],
+      'chatgpt': ['chatgpt', 'gpt-4', 'gpt-5', 'gpt-6', 'شات جي بي تي', 'جي بي تي'],
+      'google-gemini': ['gemini', 'google gemini', 'جيميناي', 'جوجل جيميناي'],
+      'openai': ['openai', 'sora', 'gpt', 'أوبن إيه آي', 'أوبن اي اي'],
+      'robotics': ['robot', 'robotics', 'الروبوت', 'الروبوتات', 'درون'],
+      'startups': ['startup', 'startups', 'الشركات الناشئة', 'شركة ناشئة', 'ريادة']
+    };
+
+    const keywords = keywordsMap[newsCategorySlugFromPath] || [];
+
+    return news.filter(article => {
+      const articleCatSlug = slugify(article.category || '');
+      if (articleCatSlug === newsCategorySlugFromPath || articleCatSlug.includes(newsCategorySlugFromPath)) {
+        return true;
+      }
+      const titleLower = article.title.toLowerCase();
+      const descLower = article.description.toLowerCase();
+      const contentLower = article.content.toLowerCase();
+
+      return keywords.some(keyword => 
+        titleLower.includes(keyword) || 
+        descLower.includes(keyword) || 
+        contentLower.includes(keyword)
+      );
+    });
+  }, [news, newsCategorySlugFromPath, currentView]);
+
+  const selectedNewsArticle = useMemo(() => {
+    if (currentView !== AppView.NEWS_DETAIL) return null;
+    const match = location.pathname.match(/^\/news\/([^/]+)/);
+    if (!match) return null;
+    const slug = match[1];
+    return news.find(a => slugify(a.title) === slug || a.id === slug) || null;
+  }, [location.pathname, news, currentView]);
+
+  const authorIdFromPath = useMemo(() => {
+    const match = location.pathname.match(/^\/author\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
+
+  const selectedAuthor = useMemo(() => {
+    if (!authorIdFromPath) return null;
+    return authors.find(a => a.id === authorIdFromPath || slugify(a.name) === authorIdFromPath) || null;
+  }, [authorIdFromPath]);
+
   const showCollections = searchTerm === '' && categoryFilter === 'All';
 
   // SEO metadata based on current view
@@ -663,6 +755,35 @@ const App: React.FC = () => {
           keywords: 'AI news, artificial intelligence news, machine learning news, AI updates, tech news',
           canonical: `${baseUrl}/news`,
           ogType: 'website'
+        };
+
+      case AppView.NEWS_CATEGORY:
+        return {
+          title: `${newsCategoryTitle} | Latest News | AI News-Roll`,
+          description: `Read aggregated news, articles, and reviews regarding ${newsCategoryTitle}. Keep updated with AI News-Roll.`,
+          keywords: `${newsCategoryTitle}, AI news, artificial intelligence, news category`,
+          canonical: `${baseUrl}${location.pathname}`,
+          ogType: 'website'
+        };
+
+      case AppView.NEWS_DETAIL:
+        return {
+          title: selectedNewsArticle ? `${selectedNewsArticle.title} | AI News-Roll` : 'AI News | AI News-Roll',
+          description: selectedNewsArticle ? selectedNewsArticle.description.substring(0, 155) : 'Read details of the latest AI breaking news.',
+          keywords: selectedNewsArticle ? `${selectedNewsArticle.title}, AI news, ${selectedNewsArticle.category}` : 'AI news details',
+          canonical: `${baseUrl}${location.pathname}`,
+          ogType: 'article',
+          ogImage: selectedNewsArticle?.imageUrl || undefined
+        };
+
+      case AppView.AUTHOR:
+        const authorName = selectedAuthor ? selectedAuthor.name : 'Author';
+        return {
+          title: `${authorName} | AI Writer Profile | AI News-Roll`,
+          description: selectedAuthor ? `Browse articles and contributions written by ${selectedAuthor.arabicName} on AI News-Roll.` : 'Author Profile page.',
+          keywords: `${authorName}, AI writer, tech journalist, AI articles`,
+          canonical: `${baseUrl}${location.pathname}`,
+          ogType: 'profile'
         };
 
       case AppView.FAVORITES:
@@ -1028,6 +1149,30 @@ const App: React.FC = () => {
               {currentView === AppView.LATEST_NEWS && (
                 <Suspense fallback={<LoadingFallback />}>
                   <NewsFeed articles={news} />
+                </Suspense>
+              )}
+              {currentView === AppView.NEWS_CATEGORY && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <NewsFeed articles={filteredNews} categoryTitle={newsCategoryTitle} />
+                </Suspense>
+              )}
+              {currentView === AppView.NEWS_DETAIL && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <NewsDetail 
+                    article={selectedNewsArticle} 
+                    onBack={() => navigate('/news')} 
+                    onNavigate={handleNavigation}
+                  />
+                </Suspense>
+              )}
+              {currentView === AppView.AUTHOR && (
+                <Suspense fallback={<LoadingFallback />}>
+                  <AuthorPage 
+                    authorId={authorIdFromPath} 
+                    articles={news}
+                    onBack={() => navigate('/news')}
+                    onNavigate={handleNavigation}
+                  />
                 </Suspense>
               )}
               {currentView === AppView.ANALYTICS && (

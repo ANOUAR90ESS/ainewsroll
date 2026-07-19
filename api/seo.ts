@@ -125,6 +125,19 @@ Sitemap: ${baseUrl}/api/seo?sitemap=1&gzip=0
   return robotsTxt;
 }
 
+function slugify(text: string): string {
+  if (!text) return '';
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')                     // Replace spaces with -
+    .replace(/[^\w\u0621-\u064A-]+/g, '')     // Keep alphanumeric, arabic characters, and hyphens
+    .replace(/--+/g, '-')                     // Replace multiple - with single -
+    .replace(/^-+/, '')                       // Trim - from start
+    .replace(/-+$/, '');                      // Trim - from end
+}
+
 async function generateSitemap(): Promise<string> {
   const cached = getCache('sitemap');
   if (cached) return cached;
@@ -208,8 +221,9 @@ async function generateSitemap(): Promise<string> {
       } else if (news && news.length > 0) {
         news.forEach((article: any) => {
           const lastmod = article.updated_at || article.created_at || now;
+          const slug = slugify(article.title) || article.id;
           xml += `  <url>
-    <loc>${baseUrl}/news/${article.id}</loc>
+    <loc>${baseUrl}/news/${slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>

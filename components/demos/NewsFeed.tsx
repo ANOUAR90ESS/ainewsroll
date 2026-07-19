@@ -1,34 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NewsArticle } from '../../types';
-import { Calendar, ExternalLink, Newspaper, Tag } from 'lucide-react';
-import NewsModal from '../NewsModal';
+import { Calendar, ExternalLink, Newspaper } from 'lucide-react';
 import AdUnit from '../AdUnit';
 import { trackNewsClick } from '../../services/analyticsService';
+import { slugify } from '../../utils/authors';
+import { optimizeImageUrl } from '../../utils/imageOptimizer';
 
 interface NewsFeedProps {
   articles: NewsArticle[];
+  categoryTitle?: string;
 }
 
-const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
-
-  // Check for article ID in URL params and open it on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const articleId = params.get('article');
-    
-    if (articleId && articles.length > 0) {
-      const article = articles.find(a => a.id === articleId);
-      if (article) {
-        setSelectedArticle(article);
-        trackNewsClick(article.title, article.source);
-      }
-    }
-  }, [articles]);
+const NewsFeed: React.FC<NewsFeedProps> = ({ articles, categoryTitle }) => {
+  const navigate = useNavigate();
 
   const openArticle = (article: NewsArticle) => {
-    setSelectedArticle(article);
+    const slug = slugify(article.title);
     trackNewsClick(article.title, article.source);
+    navigate(`/news/${slug}`);
   };
 
   return (
@@ -36,9 +26,13 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
       <div className="flex items-end justify-between border-b border-zinc-800 pb-6">
         <div>
            <h1 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
-             <Newspaper className="w-8 h-8 text-purple-500" /> Latest News
+             <Newspaper className="w-8 h-8 text-purple-500" /> {categoryTitle ? `${categoryTitle}` : 'Latest News'}
            </h1>
-           <p className="text-zinc-400">Insights, updates, and articles from the AI world.</p>
+           <p className="text-zinc-400">
+             {categoryTitle 
+               ? `Aggregated articles and updates about ${categoryTitle}.`
+               : 'Insights, updates, and articles from the AI world.'}
+           </p>
         </div>
       </div>
 
@@ -55,7 +49,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
               <div key={article.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
                 <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                   <img 
-                    src={article.imageUrl} 
+                    src={optimizeImageUrl(article.imageUrl, 600)} 
                     alt={article.title}
                     loading="lazy"
                     width="1280"
@@ -115,7 +109,7 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/50 transition-all group flex flex-col h-full hover:shadow-xl hover:shadow-purple-900/10">
                     <div className="aspect-video overflow-hidden bg-zinc-950 relative cursor-pointer" onClick={() => openArticle(article)}>
                       <img 
-                        src={article.imageUrl} 
+                        src={optimizeImageUrl(article.imageUrl, 600)} 
                         alt={article.title}
                         loading="lazy"
                         width="1280"
@@ -169,10 +163,6 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ articles }) => {
             </div>
           )}
         </div>
-      )}
-
-      {selectedArticle && (
-        <NewsModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
       )}
     </div>
   );

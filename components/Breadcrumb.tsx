@@ -56,12 +56,28 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, onNavigate }) => {
               'name': 'Home',
               'item': 'https://ainewsroll.space'
             },
-            ...items.map((item, index) => ({
-              '@type': 'ListItem',
-              'position': index + 2,
-              'name': item.label,
-              'item': `https://ainewsroll.space${item.view ? `?view=${item.view}` : ''}${item.pageId ? `&id=${item.pageId}` : ''}`
-            }))
+            ...items.map((item, index) => {
+              let itemPath = '';
+              if (item.view) {
+                if (item.view === AppView.HOME) itemPath = '/';
+                else if (item.view === AppView.LATEST_NEWS) itemPath = '/news';
+                else if (item.view === AppView.NEWS_CATEGORY) itemPath = `/news/category/${item.pageId || ''}`;
+                else if (item.view === AppView.NEWS_DETAIL) itemPath = `/news/${item.pageId || ''}`;
+                else if (item.view === AppView.AUTHOR) itemPath = `/author/${item.pageId || ''}`;
+                else if (item.view === AppView.CATEGORY) itemPath = `/category/${item.pageId || ''}`;
+                else if (item.view === AppView.TOOL_DETAIL) itemPath = `/tool/${item.pageId || ''}`;
+                else if (item.view === AppView.FREE_TOOLS) itemPath = '/tools/free';
+                else if (item.view === AppView.PAID_TOOLS) itemPath = '/tools/paid';
+                else if (item.view === AppView.LATEST_TOOLS) itemPath = '/tools/latest';
+                else itemPath = `/${item.view.toLowerCase()}`;
+              }
+              return {
+                '@type': 'ListItem',
+                'position': index + 2,
+                'name': item.label,
+                'item': `https://ainewsroll.space${itemPath}`
+              };
+            })
           ]
         })}
       </script>

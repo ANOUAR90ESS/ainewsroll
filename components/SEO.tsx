@@ -78,13 +78,14 @@ const SEO: React.FC<SEOProps> = ({
       linkElement.href = canonical;
     }
 
-    // Add JSON-LD schema markup
+    // Add JSON-LD schema markup (isolated from index.html static schema)
     if (schema) {
-      let scriptElement = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
+      let scriptElement = document.getElementById('seo-schema-markup') as HTMLScriptElement;
 
       if (!scriptElement) {
         scriptElement = document.createElement('script');
         scriptElement.type = 'application/ld+json';
+        scriptElement.id = 'seo-schema-markup';
         document.head.appendChild(scriptElement);
       }
 

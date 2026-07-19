@@ -79,6 +79,37 @@ const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
 
+            <div className="mt-8 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-4 px-2">
+              News Categories
+            </div>
+            {[
+              { path: '/news/category/ai-tools', label: 'AI Tools', icon: LayoutGrid },
+              { path: '/news/category/chatgpt', label: 'ChatGPT', icon: MessageSquare },
+              { path: '/news/category/google-gemini', label: 'Google Gemini', icon: Sparkles },
+              { path: '/news/category/openai', label: 'OpenAI', icon: Sparkles },
+              { path: '/news/category/robotics', label: 'Robotics', icon: LayoutGrid },
+              { path: '/news/category/startups', label: 'Startups', icon: LayoutGrid }
+            ].map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => {
+                    if (window.innerWidth < 1024) toggleSidebar();
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+                    isActive
+                      ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-600/20'
+                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+
             {/* My Favorites - Only visible if user is logged in */}
             {user && (
               <>

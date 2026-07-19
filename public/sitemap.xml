@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Dynamic Sitemap -->
-<!-- This is a placeholder. The actual sitemap is generated dynamically at /api/seo?sitemap=1 -->
-<!-- Robots.txt points to: https://ainewsroll.space/api/seo?sitemap=1&gzip=0 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- See /api/seo?sitemap=1 for the complete dynamic sitemap -->
-</urlset>
