@@ -758,19 +758,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     };
 
-  const convertRssToTool = async (item: any) => {
-    const stripHtml = (html: string) => {
+  const stripHtml = (html: string) => {
+    if (!html) return '';
+    try {
       const tmp = document.createElement('DIV');
       tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
-    };
+      const text = tmp.textContent || tmp.innerText || '';
+      return text
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+    } catch (e) {
+      return html.replace(/<[^>]+>/g, ' ').trim();
+    }
+  };
 
-    setProcessingId(item.id ?? item.link ?? crypto.randomUUID());
+  const convertRssToTool = async (item: any) => {
+    const actionKey = `${item.id || item.link || 'tool'}-tool`;
+    setProcessingId(actionKey);
     try {
         const extracted = await extractToolFromRSSItem(item.title, item.description);
 
-        const toolName = (extracted.name || item.title || 'RSS Tool').substring(0, 200);
-        const toolDescription = (extracted.description || stripHtml(item.description || '')).substring(0, 500);
+        const toolName = stripHtml(extracted.name || item.title || 'RSS Tool').substring(0, 200);
+        const toolDescription = stripHtml(extracted.description || item.description || '').substring(0, 500);
         const toolCategory = extracted.category || 'News';
 
         let aiImageUrl: string | undefined;
@@ -794,7 +810,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setLastSuccess(null);
     } catch (e) {
         console.error(e);
-        const fallbackName = (item.title || 'RSS Tool').substring(0, 200);
+        const fallbackName = stripHtml(item.title || 'RSS Tool').substring(0, 200);
         setNewTool({
           name: fallbackName,
           description: stripHtml(item.description || '').substring(0, 500),
@@ -805,26 +821,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           imageUrl: `https://picsum.photos/seed/${encodeURIComponent(fallbackName)}/800/400`
         });
         setActiveTab('create');
-        alert("No se pudo extraer con IA; cargamos el item RSS en el formulario.");
+        alert("Loaded RSS item into tool creation form.");
     } finally {
         setProcessingId(null);
     }
   };
 
   const convertRssToNews = async (item: any) => {
-    const stripHtml = (html: string) => {
-      const tmp = document.createElement('DIV');
-      tmp.innerHTML = html;
-      return tmp.textContent || tmp.innerText || '';
-    };
-
-    setProcessingId(item.id ?? item.link ?? crypto.randomUUID());
+    const actionKey = `${item.id || item.link || 'news'}-news`;
+    setProcessingId(actionKey);
     try {
       const extracted = await extractNewsFromRSSItem(item.title, item.description);
       setNewNews({
-        title: (extracted.title || item.title || 'RSS News').substring(0, 200),
-        description: stripHtml(extracted.description || item.description).substring(0, 300),
-        content: stripHtml(extracted.content || item.description).substring(0, 1000),
+        title: stripHtml(extracted.title || item.title || 'RSS News').substring(0, 200),
+        description: stripHtml(extracted.description || item.description || '').substring(0, 300),
+        content: stripHtml(extracted.content || item.description || '').substring(0, 1000),
         source: item.link || 'RSS Feed',
         imageUrl: `https://picsum.photos/800/400?random=${Date.now()}`,
         category: extracted.category || 'Tech News'
@@ -834,7 +845,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     } catch (e) {
       console.error(e);
       setNewNews({
-        title: (item.title || 'RSS News').substring(0, 200),
+        title: stripHtml(item.title || 'RSS News').substring(0, 200),
         description: stripHtml(item.description || '').substring(0, 300),
         content: stripHtml(item.description || '').substring(0, 1000),
         source: item.link || 'RSS Feed',
@@ -842,21 +853,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         category: 'Tech News'
       });
       setActiveTab('news');
-      alert("No se pudo extraer con IA; cargamos el item RSS en el formulario.");
+      alert("Loaded RSS item into news publishing form.");
     } finally {
       setProcessingId(null);
     }
   };
 
   const publishRssAsNews = async (item: any) => {
-    setProcessingId(item.id);
+    const actionKey = `${item.id || item.link || 'pub'}-publish`;
+    setProcessingId(actionKey);
     try {
-      const stripHtml = (html: string) => {
-        const tmp = document.createElement('DIV');
-        tmp.innerHTML = html || '';
-        return tmp.textContent || tmp.innerText || '';
-      };
-
       let extracted: Partial<NewsArticle> = {};
       try {
         extracted = await extractNewsFromRSSItem(item.title, item.description);
@@ -866,7 +872,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       const cleanDescription = stripHtml(extracted.description || item.description || '').substring(0, 300).trim();
       const cleanContent = stripHtml(extracted.content || item.description || '').substring(0, 1000).trim();
-      const title = (extracted.title || item.title || 'RSS News Article').substring(0, 200).trim();
+      const title = stripHtml(extracted.title || item.title || 'RSS News Article').substring(0, 200).trim();
       
       const newsCategory = extracted.category || 'Tech News';
       let newsImageUrl = extracted.imageUrl;
@@ -1655,43 +1661,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                    </button>
                  </div>
                )}
-               {rssItems.map(item => (
-                 <div key={item.id} className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl flex flex-col gap-2">
-                    <div>
-                       <h4 className="text-sm font-bold text-white line-clamp-1">{item.title}</h4>
-                       <p className="text-xs text-zinc-400 line-clamp-1">{item.description}</p>
+               {rssItems.map(item => {
+                  const cleanTitle = stripHtml(item.title || '');
+                  const cleanDesc = stripHtml(item.description || '');
+                  const toolKey = `${item.id || item.link || 'tool'}-tool`;
+                  const newsKey = `${item.id || item.link || 'news'}-news`;
+                  const pubKey = `${item.id || item.link || 'pub'}-publish`;
+
+                  return (
+                    <div key={item.id} className="bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl flex flex-col gap-2.5 shadow-md">
+                       <div>
+                          <h4 className="text-sm font-bold text-white line-clamp-1">{cleanTitle}</h4>
+                          <p className="text-xs text-zinc-400 line-clamp-2 mt-0.5 leading-relaxed">{cleanDesc}</p>
+                       </div>
+                       <div className="flex flex-wrap gap-2 pt-1 border-t border-zinc-800/60">
+                           <button 
+                               onClick={() => convertRssToTool(item)}
+                               disabled={!!processingId}
+                               title="Edit as Tool"
+                               className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                           >
+                               {processingId === toolKey ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LayoutGrid className="w-3.5 h-3.5" />}
+                               <span>Tool</span>
+                           </button>
+                           <button 
+                               onClick={() => convertRssToNews(item)}
+                               disabled={!!processingId}
+                               title="Edit as News"
+                               className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                           >
+                               {processingId === newsKey ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Newspaper className="w-3.5 h-3.5" />}
+                               <span>News</span>
+                           </button>
+                           <button 
+                             onClick={() => publishRssAsNews(item)}
+                             disabled={!!processingId}
+                             title="Publish News"
+                             className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                           >
+                             {processingId === pubKey ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                             <span>Publish</span>
+                           </button>
+                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                        <button 
-                            onClick={() => convertRssToTool(item)}
-                            disabled={!!processingId}
-                            title="Edit as Tool"
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
-                        >
-                            {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <LayoutGrid className="w-3 h-3" />}
-                            <span className="hidden sm:inline">Tool</span>
-                        </button>
-                        <button 
-                            onClick={() => convertRssToNews(item)}
-                            disabled={!!processingId}
-                            title="Edit as News"
-                            className="bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
-                        >
-                            {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Newspaper className="w-3 h-3" />}
-                            <span className="hidden sm:inline">News</span>
-                        </button>
-                        <button 
-                          onClick={() => publishRssAsNews(item)}
-                          disabled={!!processingId}
-                          title="Publish News"
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 rounded text-xs flex items-center justify-center gap-1 disabled:opacity-50 transition-colors"
-                        >
-                          {processingId === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                          <span className="hidden sm:inline">Publish</span>
-                        </button>
-                    </div>
-                 </div>
-               ))}
+                  );
+                })}
             </div>
          </div>
        )}
