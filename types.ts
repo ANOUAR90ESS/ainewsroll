@@ -9,6 +9,7 @@ export interface Tool {
   price: string;
   imageUrl: string;
   website: string;
+  rating?: number;
   // Extended details for ToolDetail page
   how_to_use?: string;  // Step-by-step guide
   features_detailed?: string;  // Detailed feature breakdown

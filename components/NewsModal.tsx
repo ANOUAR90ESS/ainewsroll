@@ -52,7 +52,7 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
         
         {/* Header / Image */}
-        <div className="relative h-64 md:h-80 shrink-0 group">
+        <div className="relative w-full aspect-video shrink-0 group overflow-hidden">
           <img 
             src={article.imageUrl} 
             alt={article.title} 

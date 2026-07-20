@@ -21,6 +21,8 @@ const ToolDetail = lazy(() => import('./components/ToolDetail'));
 const NewsDetail = lazy(() => import('./components/NewsDetail'));
 const AuthorPage = lazy(() => import('./components/AuthorPage'));
 
+import TrendingTicker from './components/TrendingTicker';
+import ToolComparer from './components/ToolComparer';
 import { slugify, authors } from './utils/authors';
 import { AppView, Tool, NewsArticle, UserProfile } from './types';
 import { generateDirectoryTools } from './services/openaiService';
@@ -78,6 +80,17 @@ const App: React.FC = () => {
   // Auth State
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Tool Comparer State
+  const [isComparerOpen, setIsComparerOpen] = useState(false);
+  const [comparerTools, setComparerTools] = useState<Tool[]>([]);
+
+  const handleOpenComparer = (tool?: Tool) => {
+    if (tool) {
+      setComparerTools([tool]);
+    }
+    setIsComparerOpen(true);
+  };
 
   // Data State
   const [tools, setTools] = useState<Tool[]>([]);
@@ -905,6 +918,12 @@ const App: React.FC = () => {
       />
 
       <div className="flex-1 lg:ml-64 flex flex-col h-screen overflow-hidden">
+        {/* Breaking News Ticker */}
+        <TrendingTicker 
+          articles={news} 
+          onSelectArticle={(slug) => navigate(`/news/${slug}`)} 
+        />
+
         {/* Top Header */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-zinc-800 bg-black/50 backdrop-blur-xl px-4 py-3 lg:px-8">
             <div className="flex items-center gap-3">
@@ -1157,6 +1176,7 @@ const App: React.FC = () => {
                 <Suspense fallback={<LoadingFallback />}>
                   <NewsDetail 
                     article={selectedNewsArticle} 
+                    allArticles={news}
                     onBack={() => navigate('/news')} 
                     onNavigate={handleNavigation}
                   />
@@ -1223,6 +1243,12 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+      <ToolComparer
+        isOpen={isComparerOpen}
+        onClose={() => setIsComparerOpen(false)}
+        allTools={tools}
+        initialTools={comparerTools}
+      />
       <SpeedInsights />
     </div>
   );

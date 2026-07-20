@@ -1,19 +1,21 @@
 import React, { useMemo } from 'react';
-import { Calendar, User, Tag, ArrowLeft, Share2, ExternalLink, List } from 'lucide-react';
+import { Calendar, User, Tag, ArrowLeft, Share2, ExternalLink, List, Sparkles, Hash } from 'lucide-react';
 import { NewsArticle } from '../types';
 import SEO from './SEO';
 import Breadcrumb from './Breadcrumb';
 import AdUnit from './AdUnit';
+import NewsletterWidget from './NewsletterWidget';
 import { getArticleAuthor, slugify } from '../utils/authors';
 import { optimizeImageUrl } from '../utils/imageOptimizer';
 
 interface NewsDetailProps {
   article: NewsArticle | null;
+  allArticles?: NewsArticle[];
   onBack: () => void;
   onNavigate: (view: any, pageId?: string) => void;
 }
 
-const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) => {
+const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBack, onNavigate }) => {
   if (!article) {
     return (
       <div className="max-w-3xl mx-auto p-6 text-center">
@@ -71,6 +73,81 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
 
     return headingList;
   }, [article.content]);
+
+  // Calculate recommended articles (same category or latest articles)
+  const recommendedArticles = useMemo(() => {
+    if (!allArticles || allArticles.length <= 1 || !article) return [];
+
+    const otherArticles = allArticles.filter(a => a.id !== article.id);
+
+    // Prefer articles in the same category
+    const sameCategory = otherArticles.filter(a =>
+      a.category && article.category &&
+      a.category.toLowerCase().trim() === article.category.toLowerCase().trim()
+    );
+
+    const combined = [...sameCategory];
+    for (const item of otherArticles) {
+      if (combined.length >= 3) break;
+      if (!combined.some(c => c.id === item.id)) {
+        combined.push(item);
+      }
+    }
+
+    return combined.slice(0, 3);
+  }, [allArticles, article]);
+
+  // Extract and format hashtags
+  const hashtags = useMemo(() => {
+    const defaultTags = ['AI', 'TechNews', 'GenerativeAI'];
+    if (article.category) {
+      defaultTags.unshift(article.category.replace(/\s+/g, ''));
+    }
+    const text = (article.title + ' ' + article.description).toLowerCase();
+    if (text.includes('chatgpt') || text.includes('gpt')) defaultTags.push('ChatGPT');
+    if (text.includes('gemini') || text.includes('google')) defaultTags.push('GoogleGemini');
+    if (text.includes('openai')) defaultTags.push('OpenAI');
+    if (text.includes('midjourney')) defaultTags.push('Midjourney');
+    if (text.includes('robot') || text.includes('robotics')) defaultTags.push('Robotics');
+    if (text.includes('claude') || text.includes('anthropic')) defaultTags.push('ClaudeAI');
+    return Array.from(new Set(defaultTags));
+  }, [article.category, article.title, article.description]);
+
+  // Helper for smart internal tool linking
+  const renderSmartContent = (text: string) => {
+    const keywordsMap: Record<string, string> = {
+      'ChatGPT': 'chatgpt',
+      'Google Gemini': 'google-gemini',
+      'Gemini': 'google-gemini',
+      'OpenAI': 'openai',
+      'Midjourney': 'ai-tools',
+      'Claude': 'ai-tools'
+    };
+
+    const regex = new RegExp(`\\b(${Object.keys(keywordsMap).join('|')})\\b`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, idx) => {
+      const matchedKey = Object.keys(keywordsMap).find(k => k.toLowerCase() === part.toLowerCase());
+      if (matchedKey) {
+        const catSlug = keywordsMap[matchedKey];
+        return (
+          <span
+            key={idx}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigate('NEWS_CATEGORY' as any, catSlug);
+            }}
+            className="text-indigo-400 font-semibold underline decoration-indigo-500/40 underline-offset-4 hover:text-indigo-300 hover:decoration-indigo-400 cursor-pointer transition-all px-1 bg-indigo-500/10 rounded"
+            title={`Explorar noticias de ${matchedKey}`}
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
 
   const isLongArticle = article.content.length > 1000 || paragraphs.length >= 4;
 
@@ -201,7 +278,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
 
       <article className="bg-zinc-900/40 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
         {/* Banner Image */}
-        <div className="relative h-80 sm:h-96 md:h-[460px] w-full overflow-hidden">
+        <div className="relative w-full aspect-video overflow-hidden">
           <img 
             src={optimizedImgUrl} 
             alt={article.title} 
@@ -306,7 +383,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
               return (
                 <React.Fragment key={index}>
                   <p className="text-base md:text-lg whitespace-pre-wrap font-light tracking-wide">
-                    {p}
+                    {renderSmartContent(p)}
                   </p>
 
                   {/* Ad placement logic */}
@@ -327,9 +404,33 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
             <AdUnit format="horizontal" className="my-6 border-y border-zinc-800/40 py-2" />
           </div>
 
+          {/* Hashtags Section */}
+          {hashtags.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-zinc-800/80 space-y-3">
+              <div className="flex items-center gap-2 text-xs text-zinc-400 font-semibold uppercase tracking-wider">
+                <Hash className="w-4 h-4 text-indigo-400" />
+                <span>Etiquetas / Tags</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {hashtags.map((tag, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      const tagClean = tag.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      onNavigate('NEWS_CATEGORY' as any, tagClean || 'ai-tools');
+                    }}
+                    className="px-3 py-1.5 bg-zinc-800/80 hover:bg-indigo-600/30 text-zinc-300 hover:text-indigo-300 rounded-full text-xs border border-zinc-700/80 hover:border-indigo-500/50 transition-all font-medium"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Source Link */}
           {article.source && (
-            <div className="mt-8 pt-6 border-t border-zinc-800/80 space-y-2">
+            <div className="mt-6 pt-6 border-t border-zinc-800/80 space-y-2">
               <p className="text-xs text-zinc-500 uppercase tracking-widest">Source / المصدر</p>
               {isSourceUrl ? (
                 <a 
@@ -346,6 +447,11 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
               )}
             </div>
           )}
+
+          {/* Newsletter Subscription Widget */}
+          <div className="mt-10 pt-4">
+            <NewsletterWidget variant="card" />
+          </div>
         </div>
 
         {/* Author Bio Card at Bottom */}
@@ -381,6 +487,75 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, onBack, onNavigate }) 
           </div>
         </div>
       </article>
+
+      {/* Recommended Articles Section */}
+      {recommendedArticles.length > 0 && (
+        <section className="mt-12 space-y-6">
+          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2.5">
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+              مقالات ذات صلة / Recommended Articles
+            </h3>
+            <button
+              onClick={() => onNavigate('LATEST_NEWS' as any)}
+              className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors flex items-center gap-1"
+            >
+              عرض الكل / View All &rarr;
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recommendedArticles.map((recArticle) => {
+              const recImg = optimizeImageUrl(recArticle.imageUrl || '', 600);
+              const recSlug = slugify(recArticle.title);
+              return (
+                <div
+                  key={recArticle.id}
+                  onClick={() => {
+                    onNavigate('NEWS_DETAIL' as any, recSlug);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden hover:border-indigo-500/50 transition-all duration-300 group cursor-pointer flex flex-col h-full hover:shadow-xl hover:shadow-indigo-900/10"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden bg-zinc-950">
+                    <img
+                      src={recImg}
+                      alt={recArticle.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=337&fit=crop&q=80';
+                      }}
+                    />
+                    {recArticle.category && (
+                      <span className="absolute top-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-medium text-purple-300 border border-purple-500/30">
+                        {recArticle.category}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-5 flex flex-col flex-1 justify-between space-y-3">
+                    <h4 className="font-bold text-white text-sm md:text-base line-clamp-2 group-hover:text-indigo-400 transition-colors leading-snug">
+                      {recArticle.title}
+                    </h4>
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                      {recArticle.description}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-zinc-500 pt-3 border-t border-zinc-800/80">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                        {new Date(recArticle.date).toLocaleDateString()}
+                      </span>
+                      <span className="text-indigo-400 font-semibold group-hover:underline">
+                        اقرأ المزيد &rarr;
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 };

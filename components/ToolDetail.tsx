@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ExternalLink, Tag, Sparkles, Globe2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Tag, Sparkles, Globe2, Star, Scale, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
 import { Tool } from '../types';
 import GenerateCourseButton from './GenerateCourseButton';
+
+interface ToolDetailProps {
+  tool: Tool | null;
+  onBack: () => void;
+  onVisitWebsite?: (url?: string) => void;
+  isAdmin?: boolean;
+  onOpenComparer?: (tool: Tool) => void;
+}
+
+interface UserReview {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 const toolDetailFallbackImages: Record<string, string[]> = {
   Writing: [
@@ -26,15 +42,21 @@ const getToolDetailFallbackImage = (category: string, toolName: string) => {
   return images[hash % images.length];
 };
 
-interface ToolDetailProps {
-  tool: Tool | null;
-  onBack: () => void;
-  onVisitWebsite?: (url?: string) => void;
-  isAdmin?: boolean;
-}
-
-const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, isAdmin = false }) => {
+const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, isAdmin = false, onOpenComparer }) => {
   const [imageError, setImageError] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [reviewerName, setReviewerName] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviews, setReviews] = useState<UserReview[]>([
+    {
+      id: '1',
+      name: 'Carlos M.',
+      rating: 5,
+      comment: 'Excelente herramienta. Ha mejorado drásticamente la productividad en mi equipo.',
+      date: new Date().toLocaleDateString()
+    }
+  ]);
 
   if (!tool) {
     return (
@@ -113,6 +135,14 @@ const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, i
             >
               Visit website <ExternalLink className="w-4 h-4" />
             </button>
+            {onOpenComparer && (
+              <button
+                onClick={() => onOpenComparer(tool)}
+                className="bg-purple-900/40 hover:bg-purple-800/60 text-purple-200 border border-purple-500/30 px-5 py-3 rounded-lg font-semibold flex items-center gap-2 transition-colors"
+              >
+                <Scale className="w-4 h-4 text-purple-400" /> Comparar herramienta
+              </button>
+            )}
             <GenerateCourseButton tool={tool} isAdmin={isAdmin} />
             <a
               href={tool.website}
@@ -206,6 +236,113 @@ const ToolDetail: React.FC<ToolDetailProps> = ({ tool, onBack, onVisitWebsite, i
           </div>
         </div>
       )}
+
+      {/* User Reviews & Ratings Section */}
+      <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+          <div className="flex items-center gap-2.5">
+            <MessageSquare className="w-5 h-5 text-indigo-400" />
+            <h2 className="text-xl font-bold text-white">Reseñas y Puntuación / Reviews & Rating</h2>
+          </div>
+          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full text-amber-400 text-xs font-bold">
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            <span>{tool.rating || '4.8'} / 5.0</span>
+          </div>
+        </div>
+
+        {/* Rating Submission Form */}
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (!newComment.trim()) return;
+          const rev: UserReview = {
+            id: Date.now().toString(),
+            name: reviewerName.trim() || 'Usuario Anónimo',
+            rating: newRating,
+            comment: newComment.trim(),
+            date: new Date().toLocaleDateString()
+          };
+          setReviews([rev, ...reviews]);
+          setNewComment('');
+          setReviewerName('');
+          setReviewSuccess(true);
+          setTimeout(() => setReviewSuccess(false), 3000);
+        }} className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-white">Añadir tu valoración sobre {tool.name}</h3>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-zinc-400">Puntuación:</span>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  key={star}
+                  onClick={() => setNewRating(star)}
+                  className="p-1 text-amber-400 hover:scale-110 transition-transform"
+                >
+                  <Star className={`w-5 h-5 ${star <= newRating ? 'fill-amber-400' : 'text-zinc-600'}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              type="text"
+              placeholder="Tu nombre (opcional)..."
+              value={reviewerName}
+              onChange={(e) => setReviewerName(e.target.value)}
+              className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <textarea
+            rows={3}
+            placeholder="¿Qué opinas sobre esta herramienta? Escribe tu reseña..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+          />
+
+          {reviewSuccess && (
+            <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
+              <CheckCircle2 className="w-4 h-4" /> ¡Gracias por enviar tu reseña!
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <Send className="w-3.5 h-3.5" /> Enviar Reseña
+          </button>
+        </form>
+
+        {/* Existing Reviews List */}
+        {reviews.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Reseñas de la comunidad ({reviews.length})</h4>
+            <div className="space-y-3">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="bg-zinc-950/40 border border-zinc-800/80 rounded-xl p-4 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">{rev.name}</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-3 h-3 ${star <= rev.rating ? 'text-amber-400 fill-amber-400' : 'text-zinc-700'}`}
+                        />
+                      ))}
+                      <span className="text-[10px] text-zinc-500 ml-2">{rev.date}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{rev.comment}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
