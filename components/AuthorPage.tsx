@@ -170,7 +170,7 @@ const AuthorPage: React.FC<AuthorPageProps> = ({ authorId, articles, onBack, onN
       {/* Articles Section */}
       <div className="space-y-6 pt-6">
         <h2 className="text-xl md:text-2xl font-bold text-white border-b border-zinc-800 pb-4">
-          مقالات بقلم الكاتب ({authorArticles.length}) / Articles by Author
+          Articles by Author ({authorArticles.length})
         </h2>
 
         {authorArticles.length === 0 ? (
@@ -224,7 +224,7 @@ const AuthorPage: React.FC<AuthorPageProps> = ({ authorId, articles, onBack, onN
                            onClick={() => onNavigate('NEWS_DETAIL' as any, articleSlug)}
                            className="text-indigo-400 text-xs font-medium flex items-center gap-1 hover:text-indigo-300 transition-colors bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-full"
                          >
-                           اقرأ المزيد / Read More <ExternalLink className="w-3 h-3" />
+                           Read More <ExternalLink className="w-3 h-3" />
                          </button>
                        </div>
                     </div>

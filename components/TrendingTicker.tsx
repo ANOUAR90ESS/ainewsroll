@@ -20,7 +20,7 @@ const TrendingTicker: React.FC<TrendingTickerProps> = ({ articles, onSelectArtic
       {/* Badge */}
       <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-red-600 text-white font-bold px-2.5 py-0.5 rounded-full shrink-0 shadow-sm shadow-red-900/20 text-[11px] uppercase tracking-wider">
         <Flame className="w-3.5 h-3.5 animate-pulse" />
-        <span>Trending / عاجل</span>
+        <span>Trending Now</span>
       </div>
 
       {/* Marquee Container */}

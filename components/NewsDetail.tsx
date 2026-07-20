@@ -325,7 +325,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
             <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-4 md:p-6 space-y-3">
               <div className="flex items-center gap-2 text-white font-bold text-base md:text-lg border-b border-zinc-800 pb-2">
                 <List className="w-4 h-4 text-indigo-400" />
-                <span>جدول المحتويات / Table of Contents</span>
+                <span>Table of Contents</span>
               </div>
               <ul className="space-y-2 text-sm text-zinc-400">
                 {headings.map((heading) => (
@@ -431,7 +431,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
           {/* Source Link */}
           {article.source && (
             <div className="mt-6 pt-6 border-t border-zinc-800/80 space-y-2">
-              <p className="text-xs text-zinc-500 uppercase tracking-widest">Source / المصدر</p>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest">Source</p>
               {isSourceUrl ? (
                 <a 
                   href={article.source}
@@ -470,19 +470,19 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
                   className="font-bold text-white text-base hover:text-indigo-400 transition-colors cursor-pointer"
                   onClick={() => onNavigate('AUTHOR' as any, author.id)}
                 >
-                  {author.arabicName} ({author.name})
+                  {author.name}
                 </h4>
-                <p className="text-xs text-zinc-500 font-medium">{author.arabicRole} / {author.role}</p>
+                <p className="text-xs text-zinc-500 font-medium">{author.role}</p>
               </div>
               <button 
                 onClick={() => onNavigate('AUTHOR' as any, author.id)}
                 className="text-xs text-indigo-400 hover:underline font-semibold"
               >
-                عرض كل المقالات / View all articles
+                View all articles
               </button>
             </div>
             <p className="text-xs md:text-sm text-zinc-400 leading-relaxed">
-              {author.arabicBio}
+              {author.bio}
             </p>
           </div>
         </div>
@@ -494,13 +494,13 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
           <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
             <h3 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2.5">
               <Sparkles className="w-5 h-5 text-indigo-400" />
-              مقالات ذات صلة / Recommended Articles
+              Recommended Articles
             </h3>
             <button
               onClick={() => onNavigate('LATEST_NEWS' as any)}
               className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors flex items-center gap-1"
             >
-              عرض الكل / View All &rarr;
+              View All &rarr;
             </button>
           </div>
 
@@ -546,7 +546,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
                         {new Date(recArticle.date).toLocaleDateString()}
                       </span>
                       <span className="text-indigo-400 font-semibold group-hover:underline">
-                        اقرأ المزيد &rarr;
+                        Read More &rarr;
                       </span>
                     </div>
                   </div>
