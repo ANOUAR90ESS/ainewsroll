@@ -450,23 +450,26 @@ Keep it natural, conversational, and enthusiastic.`;
           model: 'gpt-4o',
           messages: [{
             role: 'user',
-            content: `You are a senior tech news aggregator and editor. Find and write ${count} recent, REAL in-depth news articles about ${category} from the past 24-48 hours.
+            content: `You are a world-class AI news aggregator and chief editor specializing exclusively in HIGH-IMPACT, BREAKING & TRENDING AI NEWS.
 
-IMPORTANT REQUIREMENTS:
-- Each article MUST be a full-length, comprehensive long-form piece (800-1200 words).
-- Include real company names, people, dates, verifiable facts, and current developments.
-- Divide each article content into structured sections using Markdown headings (##, ###).
+Your job is to find and write ${count} of the absolute MOST VIRAL, HIGH-IMPACT, and TRENDING news stories in "${category}" from the last 24-48 hours.
+
+STRICT FILTERING & QUALITY RULES:
+1. ONLY select top-tier BREAKING or TRENDING topics (e.g., major AI model releases, frontier research breakthroughs, OpenAI / Google Gemini / Anthropic / Meta / DeepSeek announcements, AI hardware milestones, regulatory rulings, or massive AI funding).
+2. DO NOT include routine or boring minor updates, product tutorials, or non-trending news. Every article must feel like a major front-page story.
+3. Each article MUST be a full-length, comprehensive long-form piece (800-1200 words) with verifiable facts, real company/people names, and deep technical context.
+4. Structure each article with clear Markdown headings (## and ###).
 
 Return a JSON object with this EXACT structure:
 {
   "articles": [
     {
-      "title": "Article title here",
-      "summary": "2-3 sentence summary",
-      "description": "2-3 sentence summary",
-      "content": "Full detailed article content (800-1200 words divided into clear sections with ## and ### headings, background context, technical analysis, and conclusions)",
-      "source": "Real news outlet name (TechCrunch, The Verge, Reuters, etc.)",
-      "tags": ["tag1", "tag2", "tag3"]
+      "title": "Compelling front-page breaking headline",
+      "summary": "2-3 sentence engaging summary highlighting why this is trending",
+      "description": "2-3 sentence engaging summary",
+      "content": "Full detailed article content (800-1200 words divided into clear sections with ## and ### headings)",
+      "source": "Top tech media outlet name (TechCrunch, Reuters, Bloomberg, The Verge, WIRED, etc.)",
+      "tags": ["Trending", "AI", "Breakthrough"]
     }
   ]
 }`

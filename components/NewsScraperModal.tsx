@@ -10,16 +10,15 @@ interface NewsScraperModalProps {
 }
 
 const categories = [
-  { value: 'Technology', label: 'Technology', icon: '💻' },
-  { value: 'Business', label: 'Business', icon: '💼' },
-  { value: 'AI Model', label: 'AI & ML', icon: '🤖' },
-  { value: 'Innovation', label: 'Innovation', icon: '💡' },
-  { value: 'Startup', label: 'Startup', icon: '🚀' },
-  { value: 'Research', label: 'Research', icon: '🔬' }
+  { value: 'Trending AI & Tech', label: '🔥 Top Trending AI Stories', icon: '🔥' },
+  { value: 'AI Models & LLMs', label: '🤖 Frontier Models (OpenAI, Claude, Gemini)', icon: '🤖' },
+  { value: 'AI Chips & Hardware', label: '💻 Hardware & Chips (Nvidia, TSMC)', icon: '💻' },
+  { value: 'AI Startups & Business', label: '🚀 Funding & High-Impact Startups', icon: '🚀' },
+  { value: 'AI Breakthroughs & Research', label: '🔬 Scientific AI Breakthroughs', icon: '🔬' }
 ];
 
 const NewsScraperModal: React.FC<NewsScraperModalProps> = ({ isOpen, onClose, onImportArticles }) => {
-  const [selectedCategory, setSelectedCategory] = useState('Technology');
+  const [selectedCategory, setSelectedCategory] = useState('Trending AI & Tech');
   const [articleCount, setArticleCount] = useState(3);
   const [scrapedArticles, setScrapedArticles] = useState<NewsArticle[]>([]);
   const [isScrapingNews, setIsScrapingNews] = useState(false);
@@ -105,18 +104,23 @@ const NewsScraperModal: React.FC<NewsScraperModalProps> = ({ isOpen, onClose, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 border border-purple-500/30 rounded-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-6 border-b border-zinc-700">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Globe className="w-6 h-6 text-blue-400" />
-                Import Real News Articles
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Globe className="w-6 h-6 text-indigo-400" />
+                  Import Trending AI News
+                </h2>
+                <span className="bg-gradient-to-r from-amber-500 to-red-600 text-white text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                  🔥 Viral Only
+                </span>
+              </div>
               <p className="text-zinc-400 text-sm mt-1">
-                Fetch current news from real sources across the internet
+                Strictly fetches breaking, viral, and high-impact AI news stories from major tech publishers
               </p>
             </div>
             <button
