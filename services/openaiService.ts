@@ -366,13 +366,14 @@ export const analyzeToolTrends = async (tools: Tool[]): Promise<string> => {
   return data.analysis || "Unable to generate analysis.";
 };
 
-// --- Generate Image for Tool ---
-export const generateImageForTool = async (toolName: string, toolDescription: string, category: string): Promise<string> => {
+export const generateImageForTool = async (toolName: string, toolDescription: string, category: string, toolFeatures?: string): Promise<string> => {
   try {
     const styleVariations = ['modern interface dashboard', 'sleek product mockup', 'futuristic UI display', 'clean dark mode design'];
     const randomStyle = styleVariations[Math.floor(Math.random() * styleVariations.length)];
     
-    const imagePrompt = `A high-resolution, modern 3D digital UI product screenshot and mockup for "${toolName}", an innovative ${category} AI tool. Purpose: ${toolDescription}. Style: ${randomStyle}, dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality, realistic workspace interface.`;
+    const detailsExcerpt = (toolDescription + ' ' + (toolFeatures || '')).replace(/[#*`\n<>[\]]/g, ' ').replace(/\s+/g, ' ').slice(0, 300).trim();
+
+    const imagePrompt = `A high-resolution, modern 3D digital UI product screenshot and mockup for "${toolName}", an innovative ${category} AI tool. Purpose & features: ${detailsExcerpt}. Style: ${randomStyle}, dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality, realistic workspace interface.`;
 
     const imageData = await callOpenAIAPI('generateImage', {
       prompt: imagePrompt,

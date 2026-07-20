@@ -511,37 +511,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleGenerateNewsImage = async () => {
-    // Extract topic text from prompt input, title, or content
+    // Extract full title, description, and content to build a context-rich prompt
     const promptInput = newsImagePrompt?.trim() || '';
     const articleTitle = newNews.title?.trim() || '';
-    const articleContent = newNews.content?.trim() || newNews.description?.trim() || '';
+    const articleDesc = newNews.description?.trim() || '';
+    const articleContent = newNews.content?.trim() || '';
+    const category = newNews.category || 'Technology';
 
-    // Extract first 200 chars of meaningful topic text
-    const topicText = articleTitle || promptInput.slice(0, 200) || articleContent.slice(0, 200);
+    // Combine title and a clean excerpt of article content/description
+    const contextBody = (articleDesc + ' ' + articleContent).replace(/[#*`\n<>[\]]/g, ' ').replace(/\s+/g, ' ').slice(0, 350).trim();
+    const topicText = articleTitle ? `${articleTitle}. Context: ${contextBody}` : promptInput || contextBody;
 
     if (!topicText) {
-        alert("Please enter an article title, prompt description, or content first.");
+        alert("Please enter an article title, description, or content first.");
         return;
     }
 
     setGeneratingImg(true);
     try {
-      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
-      const promptText = `Modern high-resolution editorial illustration for tech article: "${cleanTopic}". Category: ${newNews.category || 'Technology'}. Professional 8k quality, cinematic lighting, sleek digital art.`;
+      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 400);
+      const promptText = `High-resolution editorial cover illustration for tech news article: "${articleTitle}". Core topic & content summary: "${contextBody || cleanTopic}". Category: ${category}. Professional 8k quality, cinematic lighting, sleek digital art style matching the article content.`;
       
-      console.log('🎨 Generating AI image for news with prompt:', promptText);
+      console.log('🎨 Generating AI image for news with content prompt:', promptText);
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForNews(cleanTopic, newNews.category || 'Technology');
+        imageUrl = imageUrl || await getUnsplashImageForNews(`${articleTitle} ${contextBody}`, category);
       }
       console.log('✅ AI Generated News Image URL:', imageUrl?.substring(0, 80));
       setNewNews(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateNewsImage:', e);
-        const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').slice(0, 100);
-        const fallbackUrl = await getUnsplashImageForNews(cleanTopic, newNews.category || 'Technology');
+        const cleanTopic = `${articleTitle} ${contextBody}`.slice(0, 100);
+        const fallbackUrl = await getUnsplashImageForNews(cleanTopic, category);
         setNewNews(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingImg(false);
@@ -552,32 +555,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const promptInput = toolImagePrompt?.trim() || '';
     const toolName = newTool.name?.trim() || '';
     const toolDesc = newTool.description?.trim() || '';
+    const toolFeatures = newTool.features_detailed?.trim() || '';
+    const toolUseCases = newTool.use_cases?.trim() || '';
+    const category = newTool.category || 'Technology';
 
-    const topicText = toolName || promptInput.slice(0, 200) || toolDesc.slice(0, 200);
+    // Combine description, features, and use cases into rich content context
+    const fullDetails = (toolDesc + ' ' + toolFeatures + ' ' + toolUseCases).replace(/[#*`\n<>[\]]/g, ' ').replace(/\s+/g, ' ').slice(0, 350).trim();
+    const topicText = toolName ? `${toolName}. Description & Features: ${fullDetails}` : promptInput || fullDetails;
 
     if (!topicText) {
-        alert("Please enter a tool name, prompt description, or description first.");
+        alert("Please enter a tool name, description, or features first.");
         return;
     }
 
     setGeneratingToolImg(true);
     try {
-      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 250);
-      const promptText = `Modern 3D digital UI product screenshot and mockup for "${cleanTopic}", an innovative ${newTool.category || 'AI'} tool. Dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality.`;
+      const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').replace(/\s+/g, ' ').slice(0, 400);
+      const promptText = `High-resolution 3D digital product UI screenshot and hero mockup for the AI tool "${toolName}". Tool core purpose, features & workflow: "${fullDetails || cleanTopic}". Category: ${category}. Dark mode UI, glowing neon accents, clean aesthetics, tech-focused, professional presentation, 8k quality.`;
       
-      console.log('🎨 Generating AI image for tool with prompt:', promptText);
+      console.log('🎨 Generating AI image for tool with content prompt:', promptText);
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForTool(cleanTopic, newTool.category || 'Technology');
+        imageUrl = imageUrl || await getUnsplashImageForTool(`${toolName} ${fullDetails}`, category);
       }
       console.log('✅ AI Generated Tool Image URL:', imageUrl?.substring(0, 80));
       setNewTool(prev => ({ ...prev, imageUrl }));
     } catch (e: any) {
         console.error('Error in handleGenerateToolImage:', e);
-        const cleanTopic = topicText.replace(/[#*`\n]/g, ' ').slice(0, 100);
-        const fallbackUrl = await getUnsplashImageForTool(cleanTopic, newTool.category || 'Technology');
+        const cleanTopic = `${toolName} ${fullDetails}`.slice(0, 100);
+        const fallbackUrl = await getUnsplashImageForTool(cleanTopic, category);
         setNewTool(prev => ({ ...prev, imageUrl: fallbackUrl }));
     } finally {
         setGeneratingToolImg(false);
