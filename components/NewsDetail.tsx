@@ -249,7 +249,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
     : article.source;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-6 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto px-1 sm:px-4 md:px-8 py-2 sm:py-6 space-y-4 sm:space-y-6 animate-in fade-in duration-300">
       <SEO 
         title={`${seoTitle} | AI News-Roll`}
         description={seoDescription}
@@ -259,7 +259,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
         schema={schemas}
       />
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between px-2 sm:px-0 mb-2">
         <button 
           onClick={onBack}
           className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
@@ -274,11 +274,13 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
         </button>
       </div>
 
-      <Breadcrumb items={breadcrumbItems} onNavigate={onNavigate} />
+      <div className="px-2 sm:px-0">
+        <Breadcrumb items={breadcrumbItems} onNavigate={onNavigate} />
+      </div>
 
-      <article className="bg-zinc-900/40 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+      <article className="bg-transparent sm:bg-zinc-900/40 border-0 sm:border border-zinc-800 rounded-none sm:rounded-2xl overflow-hidden sm:shadow-2xl">
         {/* Banner Image */}
-        <div className="relative w-full aspect-video overflow-hidden">
+        <div className="relative w-full aspect-video overflow-hidden rounded-2xl sm:rounded-none bg-zinc-950">
           <img 
             src={optimizedImgUrl} 
             alt={article.title} 
@@ -292,9 +294,9 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
         </div>
 
         {/* Article Meta Header */}
-        <div className="p-6 md:p-8 space-y-4 border-b border-zinc-800/80">
-          <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-zinc-400">
-            <span className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/10">
+        <div className="px-2 sm:px-6 md:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4 border-b border-zinc-800/80">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs md:text-sm text-zinc-400">
+            <span className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-full border border-white/10">
               <Calendar className="w-3.5 h-3.5" /> 
               {new Date(article.date).toLocaleDateString()}
             </span>
@@ -309,17 +311,17 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
               className="flex items-center gap-1.5 hover:text-indigo-400 transition-colors bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20 text-indigo-400"
             >
               <User className="w-3.5 h-3.5" />
-              {author.arabicName} ({author.name})
+              {author.name}
             </button>
           </div>
 
-          <h1 className="text-2xl md:text-4xl font-extrabold text-white leading-tight">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-white leading-snug sm:leading-tight">
             {article.title}
           </h1>
         </div>
 
         {/* Body content */}
-        <div className="p-6 md:p-8 space-y-6">
+        <div className="px-2 sm:px-6 md:px-8 py-4 sm:py-6 space-y-6">
           {/* Table of Contents */}
           {isLongArticle && headings.length > 0 && (
             <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-4 md:p-6 space-y-3">

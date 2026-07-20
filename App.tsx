@@ -975,7 +975,7 @@ const App: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto bg-zinc-950/50 scroll-smooth">
-          <div className="p-4 lg:p-8 min-h-full flex flex-col">
+          <div className="p-2 sm:p-4 lg:p-8 min-h-full flex flex-col">
             {dbError && (
                 <div className="bg-emerald-900/20 border border-emerald-800 p-4 rounded-xl mb-6 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
