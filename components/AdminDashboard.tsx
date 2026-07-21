@@ -41,6 +41,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // State to track if we are editing an existing item
   const [editingId, setEditingId] = useState<string | null>(null);
   const [lastSuccess, setLastSuccess] = useState<{ type: 'tool' | 'news', data: any } | null>(null);
+  const [isSubmittingNews, setIsSubmittingNews] = useState(false);
 
   // Courses state
   const [existingCourses, setExistingCourses] = useState<any[]>([]);
@@ -505,47 +506,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const handleNewsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNews.title || !newNews.content) return;
+  const handleNewsSubmit = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
 
-    // Auto-generate image if not provided
-    let finalImageUrl: string = newNews.imageUrl || '';
-    if (!finalImageUrl || finalImageUrl === '') {
-      console.log('🎨 Auto-generating image for news article...');
-      setGeneratingImg(true);
-      try {
-        // Generate image based on title and category using Unsplash
-        console.log('🎨 Fetching Unsplash image for news article...');
-        const generatedUrl = await getUnsplashImageForNews(newNews.title || '', newNews.category || 'Technology');
-        finalImageUrl = generatedUrl;
-        console.log('✅ Unsplash image fetched successfully:', generatedUrl);
-      } catch (error) {
-        console.error('❌ Failed to generate image:', error);
-        // Fallback to placeholder if generation fails
-        finalImageUrl = `https://picsum.photos/seed/${newNews.title}/800/400`;
-      } finally {
-        setGeneratingImg(false);
-      }
+    if (!newNews.title || !newNews.title.trim()) {
+      alert("⚠️ Please enter an Article Title before publishing.");
+      return;
+    }
+    if (!newNews.content || !newNews.content.trim()) {
+      alert("⚠️ Please enter Article Content before publishing.");
+      return;
     }
 
-    const article: NewsArticle = {
-      id: editingId || newNews.id || crypto.randomUUID(),
-      title: newNews.title || "Untitled",
-      description: newNews.description || "",
-      content: newNews.content || "",
-      source: newNews.source || "Nexus AI Blog",
-      category: newNews.category || "General",
-      imageUrl: finalImageUrl,
-      date: new Date().toISOString(),
-      affiliateUrl: newNews.affiliateUrl || '',
-      affiliateCta: newNews.affiliateCta || '',
-      sponsoredToolName: newNews.sponsoredToolName || '',
-      sponsoredToolDesc: newNews.sponsoredToolDesc || '',
-      sponsoredToolPrice: newNews.sponsoredToolPrice || ''
-    };
+    setIsSubmittingNews(true);
+    console.log('🚀 Submitting news article:', newNews.title);
 
     try {
+      // Auto-generate image if not provided
+      let finalImageUrl: string = newNews.imageUrl || '';
+      if (!finalImageUrl || finalImageUrl === '') {
+        console.log('🎨 Auto-generating image for news article...');
+        try {
+          const generatedUrl = await getUnsplashImageForNews(newNews.title || '', newNews.category || 'Technology');
+          finalImageUrl = generatedUrl;
+          console.log('✅ Unsplash image fetched successfully:', generatedUrl);
+        } catch (error) {
+          console.error('❌ Failed to generate image:', error);
+          finalImageUrl = `https://picsum.photos/seed/${encodeURIComponent(newNews.title)}/800/400`;
+        }
+      }
+
+      const article: NewsArticle = {
+        id: editingId || newNews.id || crypto.randomUUID(),
+        title: newNews.title.trim(),
+        description: newNews.description?.trim() || "",
+        content: newNews.content.trim(),
+        source: newNews.source?.trim() || "Nexus AI Blog",
+        category: newNews.category || "General",
+        imageUrl: finalImageUrl,
+        date: new Date().toISOString(),
+        affiliateUrl: newNews.affiliateUrl?.trim() || '',
+        affiliateCta: newNews.affiliateCta?.trim() || '',
+        sponsoredToolName: newNews.sponsoredToolName?.trim() || '',
+        sponsoredToolDesc: newNews.sponsoredToolDesc?.trim() || '',
+        sponsoredToolPrice: newNews.sponsoredToolPrice?.trim() || ''
+      };
+
+      console.log('💾 Article object payload ready:', article);
+
       if (editingId) {
         await onUpdateNews(editingId, article);
       } else {
@@ -554,10 +562,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       setLastSuccess({ type: 'news', data: article });
       resetNewsForm();
-      alert(`✅ Article "${article.title}" saved successfully!`);
+      alert(`✅ Article "${article.title}" published successfully!`);
     } catch (error: any) {
       console.error('❌ Error saving news article:', error);
       alert(`Failed to save article: ${error?.message || 'Unknown error'}`);
+    } finally {
+      setIsSubmittingNews(false);
     }
   };
 
@@ -2217,8 +2227,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <button type="button" onClick={() => handlePreview('news')} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 border border-zinc-700">
                         <Eye className="w-4 h-4" /> Preview
                     </button>
-                    <button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2">
-                        <Save className="w-4 h-4" /> {editingId ? 'Update Article' : 'Publish Article'}
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingNews}
+                      onClick={() => {
+                        if (!newNews.title || !newNews.content) {
+                          handleNewsSubmit();
+                        }
+                      }}
+                      className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-lg cursor-pointer"
+                    >
+                        {isSubmittingNews ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Save className="w-4 h-4" />} 
+                        <span>{isSubmittingNews ? 'Publishing Article...' : editingId ? 'Update Article' : 'Publish Article'}</span>
                     </button>
                 </div>
              </form>
