@@ -478,3 +478,22 @@ Format as JSON with keys: how_to_use, features_detailed, use_cases, pros_cons. K
     };
   }
 };
+
+export interface GoogleNewsItem {
+  id: string;
+  title: string;
+  link: string;
+  pubDate: string;
+  source: string;
+  description: string;
+}
+
+export const fetchGoogleNewsRSS = async (query: string = 'Artificial Intelligence'): Promise<GoogleNewsItem[]> => {
+  try {
+    const data = await callOpenAIAPI('fetchGoogleNewsRSS', { query });
+    return data.items || [];
+  } catch (error) {
+    console.error('Failed to fetch Google News RSS:', error);
+    return [];
+  }
+};

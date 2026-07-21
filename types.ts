@@ -27,6 +27,12 @@ export interface NewsArticle {
   content: string;
   source: string;
   date: string;
+  // Affiliate / Sponsored Tool Monetization
+  affiliateUrl?: string;
+  affiliateCta?: string;
+  sponsoredToolName?: string;
+  sponsoredToolDesc?: string;
+  sponsoredToolPrice?: string;
 }
 
 export interface UserProfile {

@@ -51,46 +51,66 @@ const NewsModal: React.FC<NewsModalProps> = ({ article, onClose }) => {
     >
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
         
-        {/* Header / Image */}
-        <div className="relative w-full aspect-video shrink-0 group overflow-hidden">
-          <img 
-            src={article.imageUrl} 
-            alt={article.title} 
-            width="1600"
-            height="900"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
-          
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-md transition-all z-10"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
-             <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-300 mb-3">
-                <span className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur border border-white/10">
+        {/* Modal Header: Title & Badges */}
+        <div className="p-6 md:px-8 md:pt-6 md:pb-4 border-b border-zinc-800 flex justify-between items-start gap-4 bg-zinc-900/90">
+          <div className="space-y-3">
+             <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-zinc-300">
+                <span className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-white/10">
                   <Calendar className="w-3.5 h-3.5" /> 
                   {new Date(article.date).toLocaleDateString()}
                 </span>
                 {article.category && (
-                    <span className="flex items-center gap-1.5 bg-purple-500/80 px-2.5 py-1 rounded-full backdrop-blur border border-white/10 text-white">
+                    <span className="flex items-center gap-1.5 bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full border border-purple-500/30 font-medium">
                       <Tag className="w-3.5 h-3.5" /> 
                       {article.category}
                     </span>
                 )}
              </div>
-             <h2 className="text-2xl md:text-4xl font-bold text-white leading-tight shadow-black drop-shadow-lg">
+             <h2 className="text-xl md:text-3xl font-bold text-white leading-tight">
                {article.title}
              </h2>
           </div>
+          <button 
+            onClick={onClose}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-full transition-all shrink-0"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Featured Image */}
+        <div className="relative w-full aspect-video shrink-0 overflow-hidden bg-zinc-950">
+          <img 
+            src={article.imageUrl} 
+            alt={article.title} 
+            width="1600"
+            height="900"
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-zinc-900 p-6 md:p-8 custom-scrollbar">
+           {/* Affiliate / Sponsored Tool Callout */}
+           {article.affiliateUrl && (
+             <div className="mb-6 p-4 md:p-5 rounded-xl bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+               <div className="space-y-1">
+                 <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Sponsored Link</span>
+                 <h4 className="text-base font-bold text-white">{article.sponsoredToolName || "Featured Tool"}</h4>
+                 {article.sponsoredToolDesc && <p className="text-xs text-zinc-300">{article.sponsoredToolDesc}</p>}
+               </div>
+               <a 
+                 href={article.affiliateUrl}
+                 target="_blank"
+                 rel="noopener sponsored noreferrer"
+                 className="shrink-0 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm rounded-lg shadow-md flex items-center gap-1.5 transition-all"
+               >
+                 <span>{article.affiliateCta || "Try Tool"}</span>
+                 <ExternalLink className="w-3.5 h-3.5" />
+               </a>
+             </div>
+           )}
            <div className="prose prose-invert max-w-none">
              <p className="text-lg md:text-xl text-zinc-300 leading-relaxed whitespace-pre-wrap font-sans font-light tracking-wide">
                {article.content}

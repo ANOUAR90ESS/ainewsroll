@@ -95,13 +95,23 @@ const mapToolToDB = (tool: Partial<Tool>) => {
 const mapNewsFromDB = (data: any): NewsArticle => ({
   ...data,
   imageUrl: data.image_url || data.imageUrl || '',
+  affiliateUrl: data.affiliate_url || data.affiliateUrl || '',
+  affiliateCta: data.affiliate_cta || data.affiliateCta || '',
+  sponsoredToolName: data.sponsored_tool_name || data.sponsoredToolName || '',
+  sponsoredToolDesc: data.sponsored_tool_desc || data.sponsoredToolDesc || '',
+  sponsoredToolPrice: data.sponsored_tool_price || data.sponsoredToolPrice || ''
 });
 
 const mapNewsToDB = (news: Partial<NewsArticle>) => {
-  const { imageUrl, ...rest } = news;
+  const { imageUrl, affiliateUrl, affiliateCta, sponsoredToolName, sponsoredToolDesc, sponsoredToolPrice, ...rest } = news;
   return {
     ...rest,
     image_url: imageUrl,
+    affiliate_url: affiliateUrl || null,
+    affiliate_cta: affiliateCta || null,
+    sponsored_tool_name: sponsoredToolName || null,
+    sponsored_tool_desc: sponsoredToolDesc || null,
+    sponsored_tool_price: sponsoredToolPrice || null,
   };
 };
 

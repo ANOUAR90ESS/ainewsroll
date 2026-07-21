@@ -147,7 +147,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           source: article.source,
           category: article.category,
           image_url: article.imageUrl,
-          date: article.date || new Date().toISOString()
+          date: article.date || new Date().toISOString(),
+          affiliate_url: article.affiliateUrl || null,
+          affiliate_cta: article.affiliateCta || null,
+          sponsored_tool_name: article.sponsoredToolName || null,
+          sponsored_tool_desc: article.sponsoredToolDesc || null,
+          sponsored_tool_price: article.sponsoredToolPrice || null
         };
         delete (dbData as any).id;
 
@@ -176,7 +181,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           source: article.source,
           category: article.category,
           image_url: article.imageUrl,
-          date: article.date || new Date().toISOString()
+          date: article.date || new Date().toISOString(),
+          affiliate_url: article.affiliateUrl || null,
+          affiliate_cta: article.affiliateCta || null,
+          sponsored_tool_name: article.sponsoredToolName || null,
+          sponsored_tool_desc: article.sponsoredToolDesc || null,
+          sponsored_tool_price: article.sponsoredToolPrice || null
         };
 
         const { data, error } = await supabase

@@ -2,7 +2,7 @@ import { supabase } from '../services/supabase';
 import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
 import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw } from 'lucide-react';
-import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend, generateImage } from '../services/openaiService';
+import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend, generateImage, fetchGoogleNewsRSS, GoogleNewsItem } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
 import ToolCard from './ToolCard';
@@ -30,7 +30,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onDeleteTool, onDeleteNews, 
     onBack
 }) => {
-  const [activeTab, setActiveTab] = useState<'create' | 'rss' | 'news' | 'manage' | 'analyze' | 'courses'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'rss' | 'news' | 'gnews' | 'manage' | 'analyze' | 'courses'>('create');
+
+  // Google News State
+  const [gnewsQuery, setGnewsQuery] = useState('Artificial Intelligence');
+  const [gnewsItems, setGnewsItems] = useState<GoogleNewsItem[]>([]);
+  const [loadingGnews, setLoadingGnews] = useState(false);
+  const [autoImportingGnews, setAutoImportingGnews] = useState(false);
 
   // State to track if we are editing an existing item
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -82,7 +88,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     content: '',
     source: '',
     imageUrl: '',
-    category: 'Technology'
+    category: 'Technology',
+    affiliateUrl: '',
+    affiliateCta: '',
+    sponsoredToolName: '',
+    sponsoredToolDesc: '',
+    sponsoredToolPrice: ''
   });
   const [newsImageMode, setNewsImageMode] = useState<'url' | 'upload' | 'generate'>('url');
   const [newsImagePrompt, setNewsImagePrompt] = useState('');
@@ -203,7 +214,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
 
     const resetNewsForm = () => {
-      setNewNews({ title: '', description: '', content: '', source: '', imageUrl: '', category: 'Technology' });
+      setNewNews({ title: '', description: '', content: '', source: '', imageUrl: '', category: 'Technology', affiliateUrl: '', affiliateCta: '', sponsoredToolName: '', sponsoredToolDesc: '', sponsoredToolPrice: '' });
       setNewsImageMode('url');
       setNewsImagePrompt('');
       setEditingId(null);
@@ -364,6 +375,72 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleFetchGoogleNews = async (queryToFetch?: string) => {
+    const query = queryToFetch || gnewsQuery || 'Artificial Intelligence';
+    setLoadingGnews(true);
+    try {
+      const items = await fetchGoogleNewsRSS(query);
+      setGnewsItems(items);
+    } catch (err: any) {
+      console.error('Failed to fetch Google News:', err);
+      alert(`Failed to fetch Google News: ${err.message}`);
+    } finally {
+      setLoadingGnews(false);
+    }
+  };
+
+  const convertGnewsToArticle = async (item: GoogleNewsItem) => {
+    setProcessingId(item.id);
+    try {
+      const article = await generateNewsFromTopic(item.title);
+      setNewNews({
+        ...newNews,
+        ...article,
+        source: item.source || 'Google News',
+        category: 'Technology'
+      });
+      setActiveTab('news');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      alert(`Failed to convert article: ${err.message}`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleAutoImportGoogleNews = async () => {
+    if (gnewsItems.length === 0) return;
+    setAutoImportingGnews(true);
+    let successCount = 0;
+    try {
+      const topItems = gnewsItems.slice(0, 5);
+      for (let i = 0; i < topItems.length; i++) {
+        const item = topItems[i];
+        try {
+          const article = await generateNewsFromTopic(item.title);
+          const finalImageUrl = await getUnsplashImageForNews(article.title || item.title, 'Technology');
+          const fullArticle: NewsArticle = {
+            id: crypto.randomUUID(),
+            title: article.title || item.title,
+            description: article.description || item.description,
+            content: article.content,
+            source: item.source || 'Google News',
+            category: 'Technology',
+            imageUrl: finalImageUrl,
+            date: new Date().toISOString()
+          };
+          await onAddNews(fullArticle);
+          successCount++;
+        } catch (e) {
+          console.error('Failed item auto-import:', e);
+        }
+      }
+      alert(`✅ Auto-imported ${successCount} Google News articles!`);
+    } finally {
+      setAutoImportingGnews(false);
+    }
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTool.name || !newTool.description) return;
@@ -460,17 +537,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       source: newNews.source || "Nexus AI Blog",
       category: newNews.category || "General",
       imageUrl: finalImageUrl,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      affiliateUrl: newNews.affiliateUrl || '',
+      affiliateCta: newNews.affiliateCta || '',
+      sponsoredToolName: newNews.sponsoredToolName || '',
+      sponsoredToolDesc: newNews.sponsoredToolDesc || '',
+      sponsoredToolPrice: newNews.sponsoredToolPrice || ''
     };
 
-    if (editingId) {
-        onUpdateNews(editingId, article);
-    } else {
-        onAddNews(article);
-    }
+    try {
+      if (editingId) {
+        await onUpdateNews(editingId, article);
+      } else {
+        await onAddNews(article);
+      }
 
-    setLastSuccess({ type: 'news', data: article });
-    resetNewsForm();
+      setLastSuccess({ type: 'news', data: article });
+      resetNewsForm();
+      alert(`✅ Article "${article.title}" saved successfully!`);
+    } catch (error: any) {
+      console.error('❌ Error saving news article:', error);
+      alert(`Failed to save article: ${error?.message || 'Unknown error'}`);
+    }
   };
 
   const handleAddNewsCategory = () => {
@@ -1120,6 +1208,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <Newspaper className="w-4 h-4 inline mr-2" /> {editingId ? 'Edit News' : 'News'}
             </button>
             <button 
+              onClick={() => { setActiveTab('gnews'); setEditingId(null); setLastSuccess(null); if (gnewsItems.length === 0) handleFetchGoogleNews(); }}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'gnews' ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+            >
+              <Globe className="w-4 h-4 inline mr-2 text-red-400" /> Google News Live
+            </button>
+            <button 
               onClick={() => setActiveTab('rss')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'rss' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
             >
@@ -1617,6 +1711,137 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
          </div>
        )}
 
+       {/* --- Real-Time Google News Live Tab --- */}
+       {activeTab === 'gnews' && (
+         <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-gradient-to-r from-red-950/40 via-zinc-900 to-amber-950/30 border border-red-800/40 rounded-xl p-6 shadow-xl">
+               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+                 <div>
+                   <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                     <Globe className="w-6 h-6 text-red-500" /> Real-Time Google News Feed
+                   </h3>
+                   <p className="text-xs text-zinc-400 mt-1">
+                     Stream live trending news directly from Google News. Convert any headline into a 1000-word SEO article with 1 click!
+                   </p>
+                 </div>
+                 
+                 <div className="flex items-center gap-2">
+                   <button
+                     type="button"
+                     onClick={() => handleFetchGoogleNews(gnewsQuery)}
+                     disabled={loadingGnews}
+                     className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg text-xs flex items-center gap-2 transition-all shadow-md"
+                   >
+                     {loadingGnews ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                     Fetch Live News
+                   </button>
+                   {gnewsItems.length > 0 && (
+                     <button
+                       type="button"
+                       onClick={handleAutoImportGoogleNews}
+                       disabled={autoImportingGnews}
+                       className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-lg text-xs flex items-center gap-2 transition-all shadow-md disabled:opacity-50"
+                     >
+                       {autoImportingGnews ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                       Auto-Import Top 5
+                     </button>
+                   )}
+                 </div>
+               </div>
+
+               {/* Search Bar & Quick Topic Filters */}
+               <div className="space-y-3 mb-6">
+                 <div className="flex gap-2">
+                   <input 
+                     value={gnewsQuery}
+                     onChange={(e) => setGnewsQuery(e.target.value)}
+                     onKeyDown={(e) => e.key === 'Enter' && handleFetchGoogleNews()}
+                     placeholder="Search Google News topic (e.g. OpenAI, Gemini 2.5, ChatGPT, AI Hardware)..."
+                     className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-white text-sm focus:border-red-500 outline-none"
+                   />
+                   <button
+                     type="button"
+                     onClick={() => handleFetchGoogleNews()}
+                     disabled={loadingGnews}
+                     className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg text-sm transition-colors border border-zinc-700"
+                   >
+                     Search
+                   </button>
+                 </div>
+
+                 <div className="flex flex-wrap gap-2 text-xs">
+                   <span className="text-zinc-500 self-center">Popular Topics:</span>
+                   {['Artificial Intelligence', 'OpenAI ChatGPT', 'Google Gemini', 'Anthropic Claude', 'NVIDIA AI', 'Robotics & Automation', 'DeepSeek'].map(topic => (
+                     <button
+                       key={topic}
+                       type="button"
+                       onClick={() => { setGnewsQuery(topic); handleFetchGoogleNews(topic); }}
+                       className={`px-3 py-1 rounded-full border transition-all ${gnewsQuery === topic ? 'bg-red-500/20 text-red-300 border-red-500/50' : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-white'}`}
+                     >
+                       {topic}
+                     </button>
+                   ))}
+                 </div>
+               </div>
+
+               {/* Live Items Grid */}
+               {loadingGnews ? (
+                 <div className="py-12 text-center space-y-3">
+                   <Loader2 className="w-8 h-8 animate-spin text-red-500 mx-auto" />
+                   <p className="text-zinc-400 text-sm">Fetching real-time Google News items...</p>
+                 </div>
+               ) : gnewsItems.length === 0 ? (
+                 <div className="py-12 text-center text-zinc-500 border border-dashed border-zinc-800 rounded-xl">
+                   <Globe className="w-10 h-10 mx-auto mb-2 text-zinc-600" />
+                   <p>Click "Fetch Live News" or search a topic to load Google News items in real time.</p>
+                 </div>
+               ) : (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {gnewsItems.map(item => (
+                     <div key={item.id} className="bg-zinc-950 border border-zinc-800 hover:border-zinc-700 p-4 rounded-xl flex flex-col justify-between gap-3 shadow-md">
+                       <div className="space-y-1.5">
+                         <div className="flex items-center justify-between text-xs text-zinc-500">
+                           <span className="font-semibold text-red-400 bg-red-950/50 px-2 py-0.5 rounded border border-red-900/40">{item.source || 'Google News'}</span>
+                           <span>{new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                         </div>
+                         <h4 className="text-white font-bold text-sm leading-snug line-clamp-2">
+                           {item.title}
+                         </h4>
+                         {item.description && (
+                           <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                             {item.description}
+                           </p>
+                         )}
+                       </div>
+
+                       <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                         <a 
+                           href={item.link} 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           className="text-xs text-zinc-400 hover:text-white flex items-center gap-1"
+                         >
+                           <ExternalLink className="w-3.5 h-3.5" /> Read Original
+                         </a>
+
+                         <button
+                           type="button"
+                           onClick={() => convertGnewsToArticle(item)}
+                           disabled={processingId === item.id}
+                           className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow"
+                         >
+                           {processingId === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                           Generate AI Article
+                         </button>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+            </div>
+         </div>
+       )}
+
        {/* --- Import RSS Tab --- */}
        {activeTab === 'rss' && (
          <div className="space-y-6 animate-in fade-in duration-300">
@@ -1926,6 +2151,67 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                      <label className="block text-sm text-zinc-400 mb-1">Source / Author</label>
                      <input value={newNews.source} onChange={e => setNewNews({...newNews, source: e.target.value})} className="w-full bg-zinc-950 border border-zinc-700 rounded p-3 text-white focus:border-purple-500 outline-none" placeholder="e.g. TechCrunch" />
                    </div>
+
+                    {/* Affiliate Monetization Section */}
+                    <div className="bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-amber-950/30 border border-purple-800/60 rounded-xl p-5 space-y-4">
+                      <div className="flex items-center gap-2 text-amber-400 font-bold text-sm uppercase tracking-wider">
+                        <Sparkles className="w-4 h-4" /> Monetization & Paid Tool Links (Affiliate)
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        If this article mentions a tool that pays you, add your referral link and details here. A featured banner will be placed inside the article!
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-zinc-300 mb-1">Affiliate / Referral Tool URL</label>
+                          <input 
+                            value={newNews.affiliateUrl || ''} 
+                            onChange={e => setNewNews({...newNews, affiliateUrl: e.target.value})} 
+                            className="w-full bg-zinc-950 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-amber-500 outline-none" 
+                            placeholder="https://tool.com?aff=yourcode" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-zinc-300 mb-1">Button CTA Text</label>
+                          <input 
+                            value={newNews.affiliateCta || ''} 
+                            onChange={e => setNewNews({...newNews, affiliateCta: e.target.value})} 
+                            className="w-full bg-zinc-950 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-amber-500 outline-none" 
+                            placeholder="e.g. Try Jasper Free / Claim 20% Off" 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-zinc-300 mb-1">Tool Name</label>
+                          <input 
+                            value={newNews.sponsoredToolName || ''} 
+                            onChange={e => setNewNews({...newNews, sponsoredToolName: e.target.value})} 
+                            className="w-full bg-zinc-950 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-amber-500 outline-none" 
+                            placeholder="e.g. Jasper AI" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-zinc-300 mb-1">Tool Price Tag</label>
+                          <input 
+                            value={newNews.sponsoredToolPrice || ''} 
+                            onChange={e => setNewNews({...newNews, sponsoredToolPrice: e.target.value})} 
+                            className="w-full bg-zinc-950 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-amber-500 outline-none" 
+                            placeholder="e.g. Free Trial / $19/mo" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-zinc-300 mb-1">Short Tool Description</label>
+                          <input 
+                            value={newNews.sponsoredToolDesc || ''} 
+                            onChange={e => setNewNews({...newNews, sponsoredToolDesc: e.target.value})} 
+                            className="w-full bg-zinc-950 border border-zinc-700 rounded p-2.5 text-white text-sm focus:border-amber-500 outline-none" 
+                            placeholder="e.g. Powerful AI writer for blogs & ads" 
+                          />
+                        </div>
+                      </div>
+                    </div>
                 </div>
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={() => handlePreview('news')} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 border border-zinc-700">

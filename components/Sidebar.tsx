@@ -20,11 +20,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
 
   const menuItems = [
-    { path: '/', label: 'All Tools', icon: LayoutGrid },
-    { path: '/tools/free', label: 'Free Tools', icon: Sparkles },
-    { path: '/tools/paid', label: 'Paid Tools', icon: DollarSign },
-    { path: '/tools/latest', label: 'Latest Tools', icon: Clock },
-    { path: '/news', label: 'Latest News', icon: Newspaper },
+    { path: '/news', label: 'AI News Portal', icon: Newspaper },
+    { path: '/', label: 'AI Tools Directory', icon: LayoutGrid },
+    { path: '/tools/free', label: 'Free AI Tools', icon: Sparkles },
+    { path: '/tools/paid', label: 'Paid & Sponsored Tools', icon: DollarSign },
+    { path: '/tools/latest', label: 'New Tool Releases', icon: Clock },
   ];
 
   const sidebarClasses = `fixed inset-y-0 left-0 z-50 w-64 bg-zinc-950 border-r border-zinc-800 transform transition-transform duration-300 ease-in-out ${

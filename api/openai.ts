@@ -513,6 +513,60 @@ Return a JSON object with this EXACT structure:
         }
       }
 
+      case 'fetchGoogleNewsRSS': {
+        const { query = 'Artificial Intelligence' } = payload;
+        try {
+          const encodedQuery = encodeURIComponent(query);
+          const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=en-US&gl=US&ceid=US:en`;
+          const response = await fetch(rssUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error(`Google News HTTP ${response.status}`);
+          }
+
+          const xmlText = await response.text();
+          const items: Array<{ id: string; title: string; link: string; pubDate: string; source: string; description: string }> = [];
+
+          const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+          let match;
+          let count = 0;
+          while ((match = itemRegex.exec(xmlText)) && count < 25) {
+            const itemXml = match[1];
+            const titleMatch = itemXml.match(/<title>([\s\S]*?)<\/title>/);
+            const linkMatch = itemXml.match(/<link>([\s\S]*?)<\/link>/);
+            const pubDateMatch = itemXml.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+            const sourceMatch = itemXml.match(/<source[^>]*>([\s\S]*?)<\/source>/);
+            const descMatch = itemXml.match(/<description>([\s\S]*?)<\/description>/);
+
+            const rawTitle = titleMatch ? titleMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : 'Google News Item';
+            const rawLink = linkMatch ? linkMatch[1] : '#';
+            const rawPubDate = pubDateMatch ? pubDateMatch[1] : new Date().toUTCString();
+            const rawSource = sourceMatch ? sourceMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1') : 'Google News';
+            const rawDesc = descMatch ? descMatch[1].replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/<[^>]+>/g, '').trim() : '';
+
+            const cleanTitle = rawTitle.replace(/\s*-\s*[^-]+$/, '').trim() || rawTitle;
+
+            items.push({
+              id: `gnews-${Date.now()}-${count++}`,
+              title: cleanTitle,
+              link: rawLink,
+              pubDate: rawPubDate,
+              source: rawSource,
+              description: rawDesc
+            });
+          }
+
+          return res.json({ success: true, items });
+        } catch (err: any) {
+          console.error('Google News RSS error:', err);
+          return res.status(500).json({ error: err.message || 'Failed to fetch Google News RSS' });
+        }
+      }
+
       default:
         return res.status(400).json({ error: 'Unknown action' });
     }

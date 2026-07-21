@@ -31,7 +31,9 @@ import {
   subscribeToNews,
   subscribeToFavorites,
   addFavorite,
-  removeFavorite
+  removeFavorite,
+  addNewsToDb,
+  updateNewsInDb
 } from './services/dbService';
 import { Menu, Search, AlertCircle, Star, Zap, TrendingUp, Layers, Sparkles } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './services/supabase';
@@ -398,61 +400,78 @@ const App: React.FC = () => {
     try {
         if (isSupabaseConfigured) {
             logger.log('Attempting to save news to Supabase...');
-            // Use admin API endpoint with service role key
-            const { data: { session } } = await supabase!.auth.getSession();
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token || ''}`
-                },
-                body: JSON.stringify({ action: 'addNews', payload: { article } })
-            });
+            let savedViaAdmin = false;
+            try {
+              // Use admin API endpoint with service role key
+              const { data: { session } } = await supabase!.auth.getSession();
+              const response = await fetch('/api/admin', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${session?.access_token || ''}`
+                  },
+                  body: JSON.stringify({ action: 'addNews', payload: { article } })
+              });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to add news');
+              if (response.ok) {
+                  const result = await response.json();
+                  logger.log('✅ News added via admin API:', result);
+                  savedViaAdmin = true;
+              } else {
+                  logger.warn('Admin API failed, falling back to direct dbService');
+              }
+            } catch (adminErr) {
+              logger.warn('Admin API fetch error, falling back to dbService:', adminErr);
             }
 
-            const result = await response.json();
-            logger.log('✅ News added via admin API:', result);
+            if (!savedViaAdmin) {
+              await addNewsToDb(article);
+              logger.log('✅ News added via dbService');
+            }
         }
         // Always update React state so UI updates immediately
         setNews((prev: NewsArticle[]) => [article, ...prev.filter((a: NewsArticle) => a.id !== article.id)]);
     } catch (e: any) {
         logger.error("Error adding news", e);
-        alert(`Failed to save news: ${e.message}`);
-        throw e; // Re-throw so AdminDashboard can handle it
+        throw e; // Re-throw so AdminDashboard can handle it without clearing user input
     }
   };
 
   const handleUpdateNews = async (id: string, article: NewsArticle) => {
     try {
         if (isSupabaseConfigured) {
-            // Use admin API endpoint with service role key
-            const { data: { session } } = await supabase!.auth.getSession();
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session?.access_token || ''}`
-                },
-                body: JSON.stringify({ action: 'updateNews', payload: { id, article } })
-            });
+            let updatedViaAdmin = false;
+            try {
+              // Use admin API endpoint with service role key
+              const { data: { session } } = await supabase!.auth.getSession();
+              const response = await fetch('/api/admin', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${session?.access_token || ''}`
+                  },
+                  body: JSON.stringify({ action: 'updateNews', payload: { id, article } })
+              });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to update news');
+              if (response.ok) {
+                  const result = await response.json();
+                  logger.log('✅ News updated via admin API:', result);
+                  updatedViaAdmin = true;
+              } else {
+                  logger.warn('Admin API updateNews failed, falling back to dbService');
+              }
+            } catch (adminErr) {
+              logger.warn('Admin API updateNews fetch error, falling back to dbService:', adminErr);
             }
 
-            const result = await response.json();
-            logger.log('✅ News updated via admin API:', result);
-        } else {
-            setNews((prev: NewsArticle[]) => prev.map((n: NewsArticle) => n.id === id ? { ...article, id } : n));
+            if (!updatedViaAdmin) {
+              await updateNewsInDb(id, article);
+              logger.log('✅ News updated via dbService');
+            }
         }
+        setNews((prev: NewsArticle[]) => prev.map((n: NewsArticle) => n.id === id ? { ...article, id } : n));
     } catch (e: any) {
         logger.error("Error updating news", e);
-        alert(`Failed to update news: ${e.message}`);
         throw e; // Re-throw so AdminDashboard can handle it
     }
   };

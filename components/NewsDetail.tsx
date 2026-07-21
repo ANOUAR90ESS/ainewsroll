@@ -279,20 +279,6 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
       </div>
 
       <article className="bg-transparent sm:bg-zinc-900/40 border-0 sm:border border-zinc-800 rounded-none sm:rounded-2xl overflow-hidden sm:shadow-2xl">
-        {/* Banner Image */}
-        <div className="relative w-full aspect-video overflow-hidden rounded-2xl sm:rounded-none bg-zinc-950">
-          <img 
-            src={optimizedImgUrl} 
-            alt={article.title} 
-            loading="eager"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
-        </div>
-
         {/* Article Meta Header */}
         <div className="px-2 sm:px-6 md:px-8 py-4 sm:py-6 space-y-3 sm:space-y-4 border-b border-zinc-800/80">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs md:text-sm text-zinc-400">
@@ -318,6 +304,19 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
           <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold text-white leading-snug sm:leading-tight">
             {article.title}
           </h1>
+        </div>
+
+        {/* Banner Image */}
+        <div className="relative w-full aspect-video overflow-hidden bg-zinc-950">
+          <img 
+            src={optimizedImgUrl} 
+            alt={article.title} 
+            loading="eager"
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+            }}
+          />
         </div>
 
         {/* Body content */}
@@ -350,6 +349,42 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ article, allArticles = [], onBa
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Sponsored / Affiliate Tool Callout Banner */}
+          {article.affiliateUrl && (
+            <div className="my-6 p-6 rounded-2xl bg-gradient-to-r from-purple-900/30 via-indigo-900/40 to-amber-900/20 border border-purple-500/40 shadow-2xl relative overflow-hidden group">
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-500/20 transition-all" />
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                <div className="space-y-2 max-w-xl">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5" /> Featured Tool Link
+                  </div>
+                  <h3 className="text-xl font-bold text-white leading-tight">
+                    {article.sponsoredToolName || "Recommended Tool"}
+                  </h3>
+                  {article.sponsoredToolDesc && (
+                    <p className="text-sm text-zinc-300 leading-relaxed">
+                      {article.sponsoredToolDesc}
+                    </p>
+                  )}
+                  {article.sponsoredToolPrice && (
+                    <div className="text-xs font-medium text-purple-300">
+                      Pricing: {article.sponsoredToolPrice}
+                    </div>
+                  )}
+                </div>
+                <a 
+                  href={article.affiliateUrl}
+                  target="_blank"
+                  rel="noopener sponsored noreferrer"
+                  className="shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all transform hover:scale-105"
+                >
+                  <span>{article.affiliateCta || "Visit Tool Website"}</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
             </div>
           )}
 
