@@ -104,15 +104,16 @@ const mapNewsFromDB = (data: any): NewsArticle => ({
 
 const mapNewsToDB = (news: Partial<NewsArticle>) => {
   const { imageUrl, affiliateUrl, affiliateCta, sponsoredToolName, sponsoredToolDesc, sponsoredToolPrice, ...rest } = news;
-  return {
+  const result: any = {
     ...rest,
     image_url: imageUrl,
-    affiliate_url: affiliateUrl || null,
-    affiliate_cta: affiliateCta || null,
-    sponsored_tool_name: sponsoredToolName || null,
-    sponsored_tool_desc: sponsoredToolDesc || null,
-    sponsored_tool_price: sponsoredToolPrice || null,
   };
+  if (affiliateUrl) result.affiliate_url = affiliateUrl;
+  if (affiliateCta) result.affiliate_cta = affiliateCta;
+  if (sponsoredToolName) result.sponsored_tool_name = sponsoredToolName;
+  if (sponsoredToolDesc) result.sponsored_tool_desc = sponsoredToolDesc;
+  if (sponsoredToolPrice) result.sponsored_tool_price = sponsoredToolPrice;
+  return result;
 };
 
 // --- Tools Operations ---
@@ -261,8 +262,21 @@ export const addNewsToDb = async (article: Partial<NewsArticle>) => {
   };
 
   console.log('Inserting news to DB:', payload);
-  const { data, error } = await supabase.from('news').insert(payload).select();
+  let { data, error } = await supabase.from('news').insert(payload).select();
   
+  if (error && (error.message.includes('affiliate') || error.message.includes('column'))) {
+    console.warn('⚠️ DB missing affiliate columns, retrying insert without affiliate fields...');
+    delete (payload as any).affiliate_url;
+    delete (payload as any).affiliate_cta;
+    delete (payload as any).sponsored_tool_name;
+    delete (payload as any).sponsored_tool_desc;
+    delete (payload as any).sponsored_tool_price;
+
+    const retry = await supabase.from('news').insert(payload).select();
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     console.error('Failed to insert news:', error);
     throw error;
@@ -276,7 +290,19 @@ export const updateNewsInDb = async (id: string, article: Partial<NewsArticle>) 
   const dbData = mapNewsToDB(article);
   delete (dbData as any).id;
   
-  const { error } = await supabase.from('news').update(dbData).eq('id', id);
+  let { error } = await supabase.from('news').update(dbData).eq('id', id);
+  if (error && (error.message.includes('affiliate') || error.message.includes('column'))) {
+    console.warn('⚠️ DB missing affiliate columns, retrying update without affiliate fields...');
+    delete (dbData as any).affiliate_url;
+    delete (dbData as any).affiliate_cta;
+    delete (dbData as any).sponsored_tool_name;
+    delete (dbData as any).sponsored_tool_desc;
+    delete (dbData as any).sponsored_tool_price;
+
+    const retry = await supabase.from('news').update(dbData).eq('id', id);
+    error = retry.error;
+  }
+
   if (error) throw error;
 };
 

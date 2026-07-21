@@ -139,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { article } = payload;
         console.log('📰 Admin API: Adding news:', article.title);
 
-        const dbData = {
+        const dbData: any = {
           id: article.id,
           title: article.title,
           description: article.description,
@@ -147,19 +147,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           source: article.source,
           category: article.category,
           image_url: article.imageUrl,
-          date: article.date || new Date().toISOString(),
-          affiliate_url: article.affiliateUrl || null,
-          affiliate_cta: article.affiliateCta || null,
-          sponsored_tool_name: article.sponsoredToolName || null,
-          sponsored_tool_desc: article.sponsoredToolDesc || null,
-          sponsored_tool_price: article.sponsoredToolPrice || null
+          date: article.date || new Date().toISOString()
         };
-        delete (dbData as any).id;
+        if (article.affiliateUrl) dbData.affiliate_url = article.affiliateUrl;
+        if (article.affiliateCta) dbData.affiliate_cta = article.affiliateCta;
+        if (article.sponsoredToolName) dbData.sponsored_tool_name = article.sponsoredToolName;
+        if (article.sponsoredToolDesc) dbData.sponsored_tool_desc = article.sponsoredToolDesc;
+        if (article.sponsoredToolPrice) dbData.sponsored_tool_price = article.sponsoredToolPrice;
 
-        const { data, error } = await supabase
+        delete dbData.id;
+
+        let { data, error } = await supabase
           .from('news')
           .insert(dbData)
           .select();
+
+        if (error && (error.message.includes('affiliate') || error.message.includes('column'))) {
+          console.warn('⚠️ DB missing affiliate columns, retrying insert without affiliate fields...');
+          delete dbData.affiliate_url;
+          delete dbData.affiliate_cta;
+          delete dbData.sponsored_tool_name;
+          delete dbData.sponsored_tool_desc;
+          delete dbData.sponsored_tool_price;
+
+          const retry = await supabase.from('news').insert(dbData).select();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           console.error('❌ DB Error:', error);
@@ -167,33 +181,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         console.log('✅ News added successfully');
-        return res.json({ success: true, data: data[0] });
+        return res.json({ success: true, data: data ? data[0] : null });
       }
 
       case 'updateNews': {
         const { id, article } = payload;
         console.log('✏️ Admin API: Updating news:', id);
 
-        const dbData = {
+        const dbData: any = {
           title: article.title,
           description: article.description,
           content: article.content,
           source: article.source,
           category: article.category,
           image_url: article.imageUrl,
-          date: article.date || new Date().toISOString(),
-          affiliate_url: article.affiliateUrl || null,
-          affiliate_cta: article.affiliateCta || null,
-          sponsored_tool_name: article.sponsoredToolName || null,
-          sponsored_tool_desc: article.sponsoredToolDesc || null,
-          sponsored_tool_price: article.sponsoredToolPrice || null
+          date: article.date || new Date().toISOString()
         };
+        if (article.affiliateUrl) dbData.affiliate_url = article.affiliateUrl;
+        if (article.affiliateCta) dbData.affiliate_cta = article.affiliateCta;
+        if (article.sponsoredToolName) dbData.sponsored_tool_name = article.sponsoredToolName;
+        if (article.sponsoredToolDesc) dbData.sponsored_tool_desc = article.sponsoredToolDesc;
+        if (article.sponsoredToolPrice) dbData.sponsored_tool_price = article.sponsoredToolPrice;
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('news')
           .update(dbData)
           .eq('id', id)
           .select();
+
+        if (error && (error.message.includes('affiliate') || error.message.includes('column'))) {
+          console.warn('⚠️ DB missing affiliate columns, retrying update without affiliate fields...');
+          delete dbData.affiliate_url;
+          delete dbData.affiliate_cta;
+          delete dbData.sponsored_tool_name;
+          delete dbData.sponsored_tool_desc;
+          delete dbData.sponsored_tool_price;
+
+          const retry = await supabase.from('news').update(dbData).eq('id', id).select();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           console.error('❌ DB Error:', error);
@@ -201,7 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         console.log('✅ News updated successfully');
-        return res.json({ success: true, data: data[0] });
+        return res.json({ success: true, data: data ? data[0] : null });
       }
 
       case 'deleteNews': {
