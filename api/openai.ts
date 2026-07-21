@@ -121,8 +121,14 @@ Return JSON array of slides with this structure: [{"title": "string", "content":
           });
         }
 
-        // Fallback to high quality Unsplash if OpenAI image generation fails entirely
-        const fallbackUrl = 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1280&h=720&fit=crop&q=80';
+        // Fallback to high-quality AI image generation via Pollinations AI if DALL-E is unavailable
+        if (!imageUrl) {
+          const randomSeed = Math.floor(Math.random() * 1000000);
+          const encodedPrompt = encodeURIComponent(cleanPrompt);
+          imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1280&height=720&nologo=true&seed=${randomSeed}`;
+          console.log('✅ Pollinations AI generated image URL:', imageUrl);
+        }
+
         return res.json({
           candidates: [
             {
@@ -130,7 +136,7 @@ Return JSON array of slides with this structure: [{"title": "string", "content":
                 parts: [
                   {
                     inlineData: {
-                      data: fallbackUrl,
+                      data: imageUrl,
                       mimeType: 'text/url'
                     }
                   }

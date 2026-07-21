@@ -624,8 +624,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForNews(`${articleTitle} ${contextBody}`, category);
+      if (!imageUrl) {
+        imageUrl = await getUnsplashImageForNews(`${articleTitle} ${contextBody}`, category);
       }
       console.log('✅ AI Generated News Image URL:', imageUrl?.substring(0, 80));
       setNewNews(prev => ({ ...prev, imageUrl }));
@@ -665,8 +665,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const resData = await generateImage(promptText, '16:9', '1024x1024');
       
       let imageUrl = resData?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (!imageUrl || imageUrl.startsWith('http')) {
-        imageUrl = imageUrl || await getUnsplashImageForTool(`${toolName} ${fullDetails}`, category);
+      if (!imageUrl) {
+        imageUrl = await getUnsplashImageForTool(`${toolName} ${fullDetails}`, category);
       }
       console.log('✅ AI Generated Tool Image URL:', imageUrl?.substring(0, 80));
       setNewTool(prev => ({ ...prev, imageUrl }));
