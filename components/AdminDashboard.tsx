@@ -1,7 +1,7 @@
 import { supabase } from '../services/supabase';
 import React, { useState, useEffect } from 'react';
 import { Tool, NewsArticle, UserProfile } from '../types';
-import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw } from 'lucide-react';
+import { Plus, Rss, Save, Loader2, AlertCircle, Newspaper, Image as ImageIcon, Upload, Wand2, Link, LayoutGrid, Eye, X, Trash2, BarChart3, TrendingUp, PieChart, PenTool, Video, Mic, Code, Briefcase, Check, Sparkles, Pencil, ArrowLeft, CheckCircle, ListTodo, ShieldAlert, GraduationCap, Activity, Palette, Database, Globe, RefreshCw, ExternalLink } from 'lucide-react';
 import { extractToolFromRSSItem, extractNewsFromRSSItem, analyzeToolTrends, generateDirectoryTools, generateImageForTool, generateToolFromTopic, generateNewsFromTopic, fetchRSSFromBackend, generateImage, fetchGoogleNewsRSS, GoogleNewsItem } from '../services/openaiService';
 import { arrayBufferToBase64 } from '../services/audioUtils';
 import { getUnsplashImageForNews, getUnsplashImageForTool } from '../services/unsplashService';
